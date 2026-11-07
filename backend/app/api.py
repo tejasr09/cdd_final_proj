@@ -1,15 +1,26 @@
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.analysis_service import (
+    create_analysis_run_for_member,
+    get_analysis_run_for_member,
+    get_impact_result_for_member,
+    page_analysis_runs_for_member,
+    page_impact_paths_for_member,
+    page_impact_results_for_member,
+)
 from app.auth import get_active_membership
 from app.database import get_session
-from app.models import OrganizationMember
+from app.models import ImpactResult, OrganizationMember
 from app.schemas import (
+    AnalysisRunCreate,
+    AnalysisRunResponse,
     DependencyActivation,
     DependencyCreate,
     DependencyResponse,
@@ -27,6 +38,8 @@ from app.schemas import (
     EventTriggerCreate,
     EventTriggerResponse,
     EventUpdate,
+    ImpactPathResponse,
+    ImpactResultResponse,
     PageResponse,
     ReviewStatus,
     UTCDateTime,
@@ -52,7 +65,7 @@ from app.services import (
     update_event,
 )
 
-API_ERROR_RESPONSES = {
+API_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     code: {"model": ErrorEnvelope, "description": description}
     for code, description in (
         (400, "Invalid request"),
@@ -86,7 +99,7 @@ def _commit(session: Session) -> None:
         ) from error
 
 
-def _page(items: list[object], total: int, limit: int, offset: int) -> dict[str, object]:
+def _page(items: Sequence[object], total: int, limit: int, offset: int) -> dict[str, object]:
     return {"items": items, "limit": limit, "offset": offset, "total": total}
 
 
@@ -570,3 +583,176 @@ def delete_event_trigger_endpoint(
     )
     _commit(session)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+def _impact_result_response(result: ImpactResult) -> ImpactResultResponse:
+    flags = result.result_flags
+    trigger_ids = flags.get("trigger_entity_ids")
+    if not isinstance(trigger_ids, list) or not all(isinstance(item, str) for item in trigger_ids):
+        raise RuntimeError("Persisted impact result has invalid trigger provenance.")
+    return ImpactResultResponse.model_validate(
+        {
+            "id": result.id,
+            "run_id": result.run_id,
+            "entity_id": result.entity_id,
+            "entity_name": flags.get("entity_name"),
+            "entity_type": flags.get("entity_type"),
+            "depth": result.depth,
+            "score": result.score,
+            "impact_level": flags.get("impact_level"),
+            "confidence_value": result.confidence_value,
+            "confidence_label": result.confidence_label,
+            "confidence_reason": flags.get("confidence_reason"),
+            "primary_path_id": result.primary_path_id,
+            "trigger_entity_ids": trigger_ids,
+            "explanation": result.explanation,
+            "result_flags": flags,
+        }
+    )
+
+
+@router.post(
+    "/events/{event_id}/analysis-runs",
+    response_model=AnalysisRunResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["analysis"],
+    summary="Run an analysis for an open event",
+    description=(
+        "Requires analysis:run permission. Creates an immutable input snapshot, "
+        "persists deterministic results and audit data, and reports safety limits."
+    ),
+)
+def create_analysis_run_endpoint(
+    event_id: UUID,
+    payload: AnalysisRunCreate,
+    request: Request,
+    membership: MembershipDependency,
+    session: SessionDependency,
+) -> AnalysisRunResponse:
+    run = create_analysis_run_for_member(
+        session,
+        membership,
+        event_id,
+        payload,
+        request_id=_request_id(request),
+    )
+    _commit(session)
+    if run.status == "failed":
+        diagnostic_id = run.summary.get("diagnostic_id", "unavailable")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Analysis failed. Diagnostic ID: {diagnostic_id}",
+        )
+    return AnalysisRunResponse.model_validate(run)
+
+
+@router.get(
+    "/analysis-runs",
+    response_model=PageResponse[AnalysisRunResponse],
+    tags=["analysis"],
+    summary="List analysis runs",
+    description="Requires event:read permission. Results use stable creation-time/UUID ordering.",
+)
+def list_analysis_runs_endpoint(
+    membership: MembershipDependency,
+    session: SessionDependency,
+    limit: PageLimit = 50,
+    offset: PageOffset = 0,
+    event_id: UUID | None = None,
+) -> dict[str, object]:
+    items, total = page_analysis_runs_for_member(
+        session,
+        membership,
+        limit=limit,
+        offset=offset,
+        event_id=event_id,
+    )
+    return _page(items, total, limit, offset)
+
+
+@router.get(
+    "/analysis-runs/{run_id}",
+    response_model=AnalysisRunResponse,
+    tags=["analysis"],
+    summary="Retrieve an analysis run",
+    description="Requires event:read permission; cross-organization runs return 404.",
+)
+def get_analysis_run_endpoint(
+    run_id: UUID,
+    membership: MembershipDependency,
+    session: SessionDependency,
+) -> AnalysisRunResponse:
+    return AnalysisRunResponse.model_validate(
+        get_analysis_run_for_member(session, membership, run_id)
+    )
+
+
+@router.get(
+    "/analysis-runs/{run_id}/results",
+    response_model=PageResponse[ImpactResultResponse],
+    tags=["analysis"],
+    summary="List impact results",
+    description="Requires event:read permission. Results are ordered by score, depth and UUID.",
+)
+def list_impact_results_endpoint(
+    run_id: UUID,
+    membership: MembershipDependency,
+    session: SessionDependency,
+    limit: PageLimit = 50,
+    offset: PageOffset = 0,
+) -> dict[str, object]:
+    items, total = page_impact_results_for_member(
+        session,
+        membership,
+        run_id,
+        limit=limit,
+        offset=offset,
+    )
+    return _page([_impact_result_response(item) for item in items], total, limit, offset)
+
+
+@router.get(
+    "/analysis-runs/{run_id}/results/{entity_id}",
+    response_model=ImpactResultResponse,
+    tags=["analysis"],
+    summary="Retrieve an impact result",
+    description="Returns the immutable entity snapshot and the primary-path explanation.",
+)
+def get_impact_result_endpoint(
+    run_id: UUID,
+    entity_id: UUID,
+    membership: MembershipDependency,
+    session: SessionDependency,
+) -> ImpactResultResponse:
+    return _impact_result_response(
+        get_impact_result_for_member(session, membership, run_id, entity_id)
+    )
+
+
+@router.get(
+    "/analysis-runs/{run_id}/results/{entity_id}/paths",
+    response_model=PageResponse[ImpactPathResponse],
+    tags=["analysis"],
+    summary="List retained paths for an impact result",
+    description=(
+        "Returns primary and retained contributing/alternative paths with immutable "
+        "entity and dependency provenance."
+    ),
+)
+def list_impact_paths_endpoint(
+    run_id: UUID,
+    entity_id: UUID,
+    membership: MembershipDependency,
+    session: SessionDependency,
+    limit: PageLimit = 50,
+    offset: PageOffset = 0,
+) -> dict[str, object]:
+    items, total = page_impact_paths_for_member(
+        session,
+        membership,
+        run_id,
+        entity_id,
+        limit=limit,
+        offset=offset,
+    )
+    return _page([ImpactPathResponse.model_validate(item) for item in items], total, limit, offset)

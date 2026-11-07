@@ -4,7 +4,7 @@ Ripple Effect is a decision-support application for exploring how a modeled chan
 
 ## Current status
 
-Phase 1 foundation, the Phase 2 synthetic UX prototype, and Phase 3 data/tenancy foundations are present. Phase 4 adds tenant-authorized entity, dependency, event, and event-trigger API routes with pagination and an OpenAPI snapshot. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human). The frontend prototype remains separate from the API and its mock results are not analysis output; the analysis engine is not yet implemented.
+Phase 1 foundation, the Phase 2 synthetic UX prototype, and Phase 3 data/tenancy foundations are present. Phases 4 and 5 add tenant-authorized REST APIs and a deterministic, bounded ripple-analysis engine with immutable run snapshots, results, paths, audit records, migrations and OpenAPI documentation. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human). The frontend prototype remains separate from the API and its mock results are not analysis output.
 
 The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together.
 
@@ -75,6 +75,9 @@ production authentication.
 
 See [`docs/api/README.md`](./docs/api/README.md) for routes, authorization,
 pagination, errors, concurrency checks, and OpenAPI snapshot instructions.
+Use the analysis routes documented there to run an open seeded event and
+inspect its paginated results and path provenance. Analysis values are
+heuristic estimates, not probabilities or guaranteed predictions.
 
 The frontend currently opens the synthetic Phase 2 click-through prototype.
 Its generated graph contains 10,018 synthetic entities and 30,017 synthetic

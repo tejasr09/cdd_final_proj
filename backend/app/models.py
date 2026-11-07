@@ -336,7 +336,8 @@ class ImpactRun(TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("id", "organization_id", name="uq_impact_runs_id_organization"),
         CheckConstraint(
-            "status IN ('pending', 'completed', 'incomplete', 'failed')",
+            "status IN ('pending', 'running', 'completed', 'completed_with_limits', "
+            "'incomplete', 'failed')",
             name="ck_impact_runs_status",
         ),
         Index(
@@ -381,6 +382,7 @@ class ImpactRun(TimestampMixin, Base):
     scenario_id: Mapped[UUID | None] = mapped_column(Uuid)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     configuration: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    input_snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     algorithm_version: Mapped[str] = mapped_column(String(80), nullable=False)
     input_hash: Mapped[str] = mapped_column(String(128), nullable=False)
     as_of: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

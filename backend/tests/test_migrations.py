@@ -51,6 +51,8 @@ def test_fresh_migration_and_synthetic_seed_are_tenant_scoped(tmp_path, monkeypa
         "audit_logs",
         "alembic_version",
     } <= table_names
+    impact_run_columns = {column["name"] for column in inspect(engine).get_columns("impact_runs")}
+    assert "input_snapshot" in impact_run_columns
 
     with Session(engine) as session:
         seed_demo_data(session)
@@ -136,6 +138,10 @@ def test_fresh_migration_and_synthetic_seed_are_tenant_scoped(tmp_path, monkeypa
         )
         session.add(run)
         session.flush()
+        run.input_snapshot = {"algorithm_version": "test", "event": {"id": str(event.id)}}
+        run.status = "completed_with_limits"
+        session.flush()
+        assert run.input_snapshot["algorithm_version"] == "test"
         with pytest.raises(IntegrityError):
             with session.begin_nested():
                 session.add(

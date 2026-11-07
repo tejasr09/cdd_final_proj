@@ -1,10 +1,10 @@
 # Ripple Effect — Project Progress
 
 - Last updated: 2026-11-07
-- Current phase: Phase 4 — API foundation implemented; awaiting human review
-- Current branch: `feature/api-foundation`
-- Current commit: Phase 4 implementation `c93eb32`; see `git log -1` for the latest local revision on this branch
-- Overall status: Phase 4 exit criteria are locally verified. Stop here for human review and explicit Phase 5 approval. Phase 2 remains partial; its human-led work may continue in parallel.
+- Current phase: Phase 5 — Ripple engine implemented; awaiting human review
+- Current branch: `feature/engine-ripple`
+- Current commit: Phase 5 implementation; see `git log -1` for the latest local revision on this branch
+- Overall status: Phase 5 exit criteria are locally verified. Stop here for human review and explicit Phase 6 approval. Phase 2 remains partial; its human-led work may continue in parallel.
 
 ## Done
 
@@ -16,12 +16,13 @@
 - Added `docs/ux/prototype-readme.md` and updated `docs/reports/phase2-report.md`, recording scope, verification, limitations, and the partial exit assessment.
 - Phase 4 API foundation is implemented and reported in `docs/reports/phase4-report.md`: tenant-authorized entity, dependency, event and trigger routes; request/response schemas; pagination; concurrency checks; audit logging; consistent error envelopes; and OpenAPI snapshot.
 - Phase 4 API tests cover CRUD/lifecycle, tenant isolation, role permissions, conflicting writes, request/audit IDs, and the generated OpenAPI contract.
+- Phase 5 implements the pure deterministic graph engine, bounded simple-path traversal, scoring/aggregation/confidence, safety-limit reporting, canonical snapshots and replay, tenant-scoped analysis endpoints, persistence, audit records, an Alembic migration, and updated API/OpenAPI documentation. Evidence is in `docs/reports/phase5-report.md`.
 
 ## In progress
 
 - Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
 - Human-owned Figma prototype and task-based testing; review/adapt the React concept, create the Figma artifact, and provide genuine findings/results.
-- Human review of `docs/reports/phase4-report.md`; do not begin Phase 5 until explicitly approved.
+- Human review of `docs/reports/phase5-report.md`; do not begin Phase 6 until explicitly approved.
 
 ## Ambiguity register
 
@@ -44,9 +45,8 @@
 
 | Order | Work item | Acceptance criteria |
 |---|---|---|
-| Next, after explicit approval | Phase 5 engine | Required test matrix passes, 32.256 example reproduced, output deterministic, ceilings visibly mark incomplete runs |
+| Next, after explicit approval | Phase 6 frontend | Event-to-analysis journey works; graph direction and accessible list agree; impact explanations are inspectable |
 | Parallel human work | Complete Phase 2 research and Figma work | Human-owned clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
-| Later | Phase 6 frontend | Event-to-analysis journey works; graph direction and accessible list agree; impact explanations are inspectable |
 | Later | Phase 7 scenarios | Scenario/baseline comparisons work and isolation tests prove live records unchanged |
 | Later | Phase 8 delivery | Local Compose is reproducible and approved CI checks pass; image/build evidence is genuine |
 | Later | Phase 9 cloud | Human-approved ACR/ACI deployment uses recorded immutable digest; health, rollback and cleanup are verified |
@@ -61,7 +61,7 @@
 - Human interviews, consent, actual UX findings, Figma prototype, and usability results do not exist yet; Phase 2 is partial until supplied and reviewed.
 - The React prototype's organization switch is only a local demo control, its data is synthetic, and mock impact/scenario values are not computed by the planned engine.
 - Live PostgreSQL migration execution and Docker-based startup could not be verified. PostgreSQL DDL ordering was checked offline; SQLite migration and tenant-reference behavior were exercised.
-- The analysis engine remains Phase 5 work; Compose migration startup wiring remains in Phase 8.
+- Analysis execution is synchronous; PostgreSQL concurrent-insert snapshot consistency has not been stress-tested. Compose migration startup wiring remains in Phase 8.
 - CI workflows and cloud resources remain future-phase/human work.
 - The root `agent-brief.md` points to `docs/agent-brief.md`, which is absent. Phase 4 requirements were taken from the available root continuation brief; neither brief was rewritten.
 
@@ -102,6 +102,16 @@
 | 2026-11-07 | `uv run --locked ruff format --check app tests scripts` in `backend` | PASS | All 15 checked Python files already formatted |
 | 2026-11-07 | Commit and worktree check | PASS | Phase 4 implementation committed as `c93eb32` on `feature/api-foundation`; worktree clean |
 | 2026-11-07 | Live PostgreSQL, Docker/Compose, production authentication, secret scan | NOT RUN | Not available or not authorized/in scope for Phase 4; no live/cloud evidence claimed |
+| 2026-11-07 | `uv run --locked pytest` in `backend` | PASS | 86 tests passed, including engine, seeded laboratory/transport API analysis, snapshot replay, migration, tenancy and OpenAPI contract checks |
+| 2026-11-07 | `uv run --locked ruff check app tests scripts migrations/versions/c13a4f8d2b71_add_analysis_run_snapshot.py` | PASS | All checks passed |
+| 2026-11-07 | `uv run --locked ruff format --check app tests scripts migrations/versions/c13a4f8d2b71_add_analysis_run_snapshot.py` | PASS | 19 files already formatted |
+| 2026-11-07 | Broad Ruff check including all migrations | FAIL | 12 pre-existing findings in `b4fceea3f1e2_initial_data_foundation.py`; historical migration left unchanged; targeted final check passes |
+| 2026-11-07 | Pylance diagnostics for changed application, schema, engine, API and migration files | PASS | No errors in the changed files |
+| 2026-11-07 | Fresh SQLite Alembic upgrade, downgrade to Phase 3 revision, re-upgrade and `alembic check` | PASS | Round-trip succeeded; no schema drift detected |
+| 2026-11-07 | `uv run --locked python -m scripts.export_openapi` in `backend` | PASS | Regenerated the checked-in API contract; snapshot comparison passes in tests |
+| 2026-11-07 | `uv audit --locked` in `backend` | PASS | No known vulnerabilities or adverse statuses in 33 packages |
+| 2026-11-07 | Synthetic engine benchmark, three runs per fixture | PASS | Median 0.302038 s for a 5,000-node/4,999-edge chain; 1.131815 s for a 120-node/7,140-edge DAG, which reached the 10,000-path ceiling. Local measurements only; no performance SLO was asserted. |
+| 2026-11-07 | Live PostgreSQL, Docker/Compose, production authentication, secret scan | NOT RUN | Not available or outside Phase 5 scope; no live/cloud evidence claimed |
 
 ## Decisions and ADRs
 
@@ -113,12 +123,14 @@
 - Phase 2 agent-preparation scope approved; human-led research and Figma ownership remain with the human.
 - Human selected generated synthetic data and explicitly approved Phase 3. The continuation brief permits Phase 2 to run in parallel with Phases 3–5; the human later asked to defer Figma/research and continue functionality. Phase 2 remains partial but did not block the approved Phase 3 work.
 - The human explicitly approved Phase 4. Phase 4 changes are isolated on `feature/api-foundation`; stop after this report until Phase 5 is explicitly approved.
+- The human explicitly approved Phase 5 and NetworkX. Phase 5 changes are isolated on `feature/engine-ripple`; stop after this report until Phase 6 is explicitly approved.
 - API updates and lifecycle changes require `expected_updated_at`; supported databases use row locks where available. Database integrity conflicts return the standard 409 error envelope.
 - `httpx==0.28.1` was added to the backend development dependency group for ASGI integration tests; it is not a runtime dependency.
 - PostgreSQL remains the authoritative store; SQLite is used for local development/tests. Live PostgreSQL migration execution was not available.
 - Phase 2 evidence and limitations: `docs/reports/phase2-report.md`.
 - Phase 3 implementation evidence and limitations: `docs/reports/phase3-report.md`.
 - Phase 4 implementation evidence and limitations: `docs/reports/phase4-report.md`.
+- Phase 5 implementation evidence and limitations: `docs/reports/phase5-report.md`.
 
 ## Risk register
 
@@ -129,24 +141,24 @@
 | Production auth provider undecided | Cannot configure production identity safely | Keep adapter boundary; select provider and deployment config with human approval | TODO(human), planned |
 | Azure subscription/cost/registry needs unknown | Deployment plan may be unusable or incur cost | Human confirms availability and budget; no cloud actions by agent | TODO(human), open |
 | UX evidence unavailable | Design could be mistaken for validated research | Keep personas as hypotheses and mark research TODO(human) | Team, open |
-| Dependency path explosion | Resource exhaustion or incomplete analysis | Enforce deterministic node/path ceilings and visible incomplete status | Engineering, planned |
+| Dependency path explosion | Resource exhaustion or incomplete analysis | Deterministic node/path ceilings and visible incomplete status are implemented and tested; synchronous execution and concurrency still need production-scale review | Engineering, active |
 | Tenant leakage or scenario mutation | Cross-organization disclosure or live-data corruption | Composite constraints, scoped access and isolation tests are implemented; live PostgreSQL verification and scenario execution tests remain open | Engineering, active |
 
 ## Human actions pending
 
 - Conduct and document Phase 2 interviews with suitable participants, appropriate consent, anonymized notes, and evidence-backed findings.
 - Create/own the clickable Figma prototype, conduct task-based tests, and provide actual frames/results for review.
-- Review `docs/reports/phase4-report.md` and explicitly approve Phase 5 before implementation proceeds.
+- Review `docs/reports/phase5-report.md`, especially scoring, result retention, safety ceilings and the concurrency limitation; explicitly approve Phase 6 before implementation proceeds.
 - Complete Phase 2 human research/Figma/usability deliverables when ready; Phase 2 remains partial but may run in parallel with Phases 3–5.
 - Start Docker Desktop and verify Compose startup when available.
 - Revisit the minimatch development-tool advisory before release.
-- Do not begin Phase 5 until explicitly approved after the Phase 4 report.
+- Do not begin Phase 6 until explicitly approved after the Phase 5 report.
 
 ## Evidence index
 
 - `docs/reports/phase-0-report.md`
 - `docs/reports/phase3-report.md`
-- `docs/reports/phase4-report.md`
+- `docs/reports/phase4-report.md` and `docs/reports/phase5-report.md`
 - `docs/api/README.md` and `docs/api/openapi.json`
 - `docs/adr/`
 - `docs/viva-notes.md` (data/tenancy topics updated with implemented evidence and limitations)
@@ -155,8 +167,8 @@
 
 ## Session handoff
 
-- Last completed task: Phase 4 API foundation on `feature/api-foundation`; see `docs/reports/phase4-report.md`.
-- Exact next task: human review of Phase 4, then explicit Phase 5 approval. Phase 2 human-led work can proceed in parallel when ready.
+- Last completed task: Phase 5 ripple engine on `feature/engine-ripple`; see `docs/reports/phase5-report.md`.
+- Exact next task: human review of Phase 5, then explicit Phase 6 approval. Phase 2 human-led work can proceed in parallel when ready.
 - Files to read first: both root-level briefs, this file, `docs/reports/phase3-report.md`, and `docs/architecture/security-and-tenancy.md`.
-- Commands to verify: `uv run --locked pytest`; `uv run --locked ruff check app tests scripts`; `uv run --locked ruff format --check app tests scripts`. PostgreSQL/Docker live checks are outstanding.
-- Approval needed: Phase 5 approval. GitHub Actions, remote operations, and cloud changes retain separate approval gates.
+- Commands to verify: `uv run --locked pytest`; `uv run --locked ruff check app tests scripts`; `uv run --locked ruff format --check app tests scripts`; `uv run --locked alembic check`. PostgreSQL/Docker live checks are outstanding.
+- Approval needed: Phase 6 approval. GitHub Actions, remote operations, and cloud changes retain separate approval gates.

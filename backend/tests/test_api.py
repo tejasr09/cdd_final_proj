@@ -3,6 +3,7 @@ import json
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import pytest
 from httpx import ASGITransport, AsyncClient, Response
@@ -12,8 +13,20 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import Base, get_session, make_engine
+from app.engine import analysis_input_from_snapshot, run_analysis
 from app.main import app
-from app.models import AuditLog, Entity, Organization, OrganizationMember, User
+from app.models import (
+    AuditLog,
+    Entity,
+    ImpactPath,
+    ImpactPathStep,
+    ImpactResult,
+    ImpactRun,
+    OperationalEvent,
+    Organization,
+    OrganizationMember,
+    User,
+)
 from app.seed import seed_demo_data
 
 
@@ -60,15 +73,25 @@ def api_context(tmp_path, monkeypatch) -> Iterator[tuple[ASGIClient, dict[str, s
         transport_coordinator = session.scalar(
             select(User).where(User.subject == "synthetic:transport-coordinator")
         )
+        campus_event = session.scalar(
+            select(OperationalEvent).where(
+                OperationalEvent.title == "Advanced Computing Laboratory unavailable"
+            )
+        )
+        transport_event = session.scalar(
+            select(OperationalEvent).where(OperationalEvent.title == "Road Segment X closed")
+        )
         laboratory = session.scalar(
             select(Entity).where(Entity.name == "Advanced Computing Laboratory")
         )
         transport_entity = session.scalar(select(Entity).where(Entity.name == "Road Segment X"))
         session.add(User(subject="api-test-analyst", display_name="API Test Analyst"))
         session.add(User(subject="api-test-coordinator", display_name="API Test Coordinator"))
+        session.add(User(subject="api-test-department", display_name="API Test Department"))
         session.flush()
         analyst = session.scalar(select(User).where(User.subject == "api-test-analyst"))
         coordinator = session.scalar(select(User).where(User.subject == "api-test-coordinator"))
+        department = session.scalar(select(User).where(User.subject == "api-test-department"))
         assert campus is not None
         assert transport is not None
         assert admin is not None
@@ -77,6 +100,9 @@ def api_context(tmp_path, monkeypatch) -> Iterator[tuple[ASGIClient, dict[str, s
         assert transport_entity is not None
         assert analyst is not None
         assert coordinator is not None
+        assert department is not None
+        assert campus_event is not None
+        assert transport_event is not None
         session.add_all(
             [
                 OrganizationMember(
@@ -91,6 +117,12 @@ def api_context(tmp_path, monkeypatch) -> Iterator[tuple[ASGIClient, dict[str, s
                     role="operations_coordinator",
                     status="active",
                 ),
+                OrganizationMember(
+                    organization_id=campus.id,
+                    user_id=department.id,
+                    role="department_coordinator",
+                    status="active",
+                ),
             ]
         )
         session.commit()
@@ -101,8 +133,11 @@ def api_context(tmp_path, monkeypatch) -> Iterator[tuple[ASGIClient, dict[str, s
             "admin_id": str(admin.id),
             "analyst_id": str(analyst.id),
             "coordinator_id": str(coordinator.id),
+            "department_id": str(department.id),
             "laboratory_id": str(laboratory.id),
             "transport_entity_id": str(transport_entity.id),
+            "campus_event_id": str(campus_event.id),
+            "transport_event_id": str(transport_event.id),
         }
 
     def override_session() -> Iterator[Session]:
@@ -475,6 +510,244 @@ def test_event_lifecycle_and_trigger_associations(api_context) -> None:
         "event_trigger.created",
         "event_trigger.deleted",
     } <= actions
+
+
+def test_analysis_run_persists_snapshot_results_paths_and_audit(api_context) -> None:
+    client, values, engine = api_context
+    response = client.post(
+        f"/api/v1/events/{values['campus_event_id']}/analysis-runs",
+        headers={**headers(values, user="analyst"), "X-Request-ID": "analysis-run-123"},
+        json={"max_depth": 4},
+    )
+
+    assert response.status_code == 201
+    run = response.json()
+    assert run["status"] == "completed"
+    assert len(run["input_hash"]) == 64
+    assert run["algorithm_version"]
+    assert run["summary"]["counts"]["eligible_edges"] > 0
+    assert run["summary"]["counts"]["enumerated_paths"] > 0
+
+    run_id = run["id"]
+    listed_runs = client.get(
+        f"/api/v1/analysis-runs?event_id={values['campus_event_id']}",
+        headers=headers(values, user="analyst"),
+    )
+    assert listed_runs.status_code == 200
+    assert listed_runs.json()["total"] == 1
+
+    result_page = client.get(
+        f"/api/v1/analysis-runs/{run_id}/results?limit=100",
+        headers=headers(values, user="analyst"),
+    )
+    assert result_page.status_code == 200
+    session_a = next(
+        result
+        for result in result_page.json()["items"]
+        if result["entity_name"] == "Practical Session A"
+    )
+    assert session_a["score"] == pytest.approx(64.8)
+    assert session_a["impact_level"] == "high"
+    assert session_a["confidence_value"] == 0.8
+    assert "not the likelihood" in session_a["confidence_reason"]
+
+    paths = client.get(
+        f"/api/v1/analysis-runs/{run_id}/results/{session_a['entity_id']}/paths",
+        headers=headers(values, user="analyst"),
+    )
+    assert paths.status_code == 200
+    assert paths.json()["total"] == 1
+    path = paths.json()["items"][0]
+    assert path["is_primary"] is True
+    assert path["provenance"]["entity_names"] == [
+        "Advanced Computing Laboratory",
+        "Practical Session A",
+    ]
+
+    with Session(engine) as session:
+        persisted_run = session.get(ImpactRun, UUID(run_id))
+        persisted_result = session.scalar(
+            select(ImpactResult).where(
+                ImpactResult.run_id == UUID(run_id),
+                ImpactResult.entity_id == UUID(session_a["entity_id"]),
+            )
+        )
+        persisted_path = session.scalar(
+            select(ImpactPath).where(
+                ImpactPath.run_id == UUID(run_id),
+                ImpactPath.entity_id == UUID(session_a["entity_id"]),
+            )
+        )
+        audit = session.scalar(
+            select(AuditLog).where(
+                AuditLog.action == "analysis_run.completed",
+                AuditLog.resource_id == UUID(run_id),
+            )
+        )
+        assert persisted_run is not None
+        assert persisted_result is not None
+        assert persisted_path is not None
+        assert persisted_run.input_snapshot["event"]["id"] == values["campus_event_id"]
+        assert persisted_run.input_snapshot["entities"]
+        replayed = run_analysis(analysis_input_from_snapshot(persisted_run.input_snapshot))
+        replayed_result = next(
+            item for item in replayed.results if str(item.entity_id) == session_a["entity_id"]
+        )
+        assert replayed.input_hash == persisted_run.input_hash
+        assert replayed_result.score == persisted_result.score
+        assert persisted_path.provenance["weights"] == [0.9]
+        assert audit is not None
+        assert audit.request_id == "analysis-run-123"
+        path_steps = list(
+            session.scalars(
+                select(ImpactPathStep).where(ImpactPathStep.path_id == persisted_path.id)
+            )
+        )
+        assert [step.sequence_index for step in path_steps] == [0, 1]
+
+        source_entity = session.scalar(
+            select(Entity).where(Entity.name == "Advanced Computing Laboratory")
+        )
+        assert source_entity is not None
+        source_entity.name = "Renamed Live Entity"
+        session.commit()
+
+    historical_result = client.get(
+        f"/api/v1/analysis-runs/{run_id}/results/{session_a['entity_id']}",
+        headers=headers(values, user="analyst"),
+    )
+    assert historical_result.status_code == 200
+    assert historical_result.json()["entity_name"] == "Practical Session A"
+
+
+def test_analysis_run_requires_open_event_trigger_and_run_permission(api_context) -> None:
+    client, values, _ = api_context
+    denied = client.post(
+        f"/api/v1/events/{values['campus_event_id']}/analysis-runs",
+        headers=headers(values, user="department"),
+        json={},
+    )
+    assert denied.status_code == 403
+
+    draft = client.post(
+        "/api/v1/events",
+        headers=headers(values),
+        json={
+            "title": "Draft analysis event",
+            "severity": 50,
+            "start_at": "2026-11-07T12:00:00Z",
+            "status": "draft",
+        },
+    )
+    assert draft.status_code == 201
+    draft_run = client.post(
+        f"/api/v1/events/{draft.json()['id']}/analysis-runs",
+        headers=headers(values),
+        json={},
+    )
+    assert draft_run.status_code == 409
+
+    open_without_trigger = client.post(
+        "/api/v1/events",
+        headers=headers(values),
+        json={
+            "title": "Open event without trigger",
+            "severity": 50,
+            "start_at": "2026-11-07T12:00:00Z",
+            "status": "open",
+        },
+    )
+    assert open_without_trigger.status_code == 201
+    missing_trigger = client.post(
+        f"/api/v1/events/{open_without_trigger.json()['id']}/analysis-runs",
+        headers=headers(values),
+        json={},
+    )
+    assert missing_trigger.status_code == 409
+
+
+def test_transport_seed_scenario_runs_with_expected_path_and_score(api_context) -> None:
+    client, values, _ = api_context
+    response = client.post(
+        f"/api/v1/events/{values['transport_event_id']}/analysis-runs",
+        headers=headers(values, organization="transport", user="transport_coordinator"),
+        json={"max_depth": 4},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "completed"
+    results = client.get(
+        f"/api/v1/analysis-runs/{response.json()['id']}/results?limit=100",
+        headers=headers(values, organization="transport", user="transport_coordinator"),
+    )
+    assert results.status_code == 200
+    commute_group = next(
+        item for item in results.json()["items"] if item["entity_name"] == "Commuter Group"
+    )
+    assert commute_group["score"] == pytest.approx(11.501568)
+    assert commute_group["confidence_value"] == 0.5
+    paths = client.get(
+        f"/api/v1/analysis-runs/{response.json()['id']}/results/{commute_group['entity_id']}/paths",
+        headers=headers(values, organization="transport", user="transport_coordinator"),
+    )
+    assert paths.status_code == 200
+    assert paths.json()["items"][0]["provenance"]["entity_names"] == [
+        "Road Segment X",
+        "Bus Route 1",
+        "Stop A",
+        "Transfer Connection",
+        "Commuter Group",
+    ]
+
+
+def test_analysis_runs_are_tenant_scoped_and_failed_run_is_audited(
+    api_context,
+    monkeypatch,
+) -> None:
+    client, values, engine = api_context
+    campus_run = client.post(
+        f"/api/v1/events/{values['campus_event_id']}/analysis-runs",
+        headers=headers(values),
+        json={},
+    )
+    assert campus_run.status_code == 201
+    foreign = client.get(
+        f"/api/v1/analysis-runs/{campus_run.json()['id']}",
+        headers=headers(values, organization="transport", user="transport_coordinator"),
+    )
+    assert foreign.status_code == 404
+
+    def fail_analysis(*args: Any, **kwargs: Any) -> None:
+        raise RuntimeError("internal implementation detail")
+
+    monkeypatch.setattr("app.analysis_service.run_analysis", fail_analysis)
+    failure = client.post(
+        f"/api/v1/events/{values['campus_event_id']}/analysis-runs",
+        headers=headers(values),
+        json={},
+    )
+    assert failure.status_code == 500
+    assert "internal implementation detail" not in failure.text
+
+    with Session(engine) as session:
+        failed_run = session.scalar(
+            select(ImpactRun).where(
+                ImpactRun.status == "failed",
+                ImpactRun.event_id == UUID(values["campus_event_id"]),
+            )
+        )
+        assert failed_run is not None
+        assert failed_run.summary["error_code"] == "engine_execution_failed"
+        assert failed_run.summary["diagnostic_id"]
+        assert failed_run.input_hash
+        assert failed_run.input_snapshot
+        audit = session.scalar(
+            select(AuditLog).where(
+                AuditLog.action == "analysis_run.failed",
+                AuditLog.resource_id == failed_run.id,
+            )
+        )
+        assert audit is not None
 
 
 def test_openapi_snapshot_matches_application_contract() -> None:

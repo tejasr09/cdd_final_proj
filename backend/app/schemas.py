@@ -207,6 +207,71 @@ class EventTriggerResponse(ORMResponse):
     created_at: UTCDateTime
 
 
+class AnalysisRunCreate(RequestModel):
+    as_of: UTCDateTime | None = None
+    max_depth: int = Field(default=4, ge=1, le=10)
+    min_edge_weight: float = Field(default=0.0, ge=0, le=1, allow_inf_nan=False)
+    depth_attenuation: float = Field(default=0.8, ge=0, le=1, allow_inf_nan=False)
+    aggregation: Literal["max", "capped_sum"] = "max"
+    max_paths_per_trigger: int = Field(default=10_000, ge=1, le=10_000)
+    max_nodes_per_run: int = Field(default=5_000, ge=1, le=5_000)
+    include_trigger_entities: bool = True
+
+
+AnalysisRunStatus = Literal[
+    "pending",
+    "running",
+    "completed",
+    "completed_with_limits",
+    "incomplete",
+    "failed",
+]
+
+
+class AnalysisRunResponse(ORMResponse):
+    id: UUID
+    organization_id: UUID
+    event_id: UUID
+    status: AnalysisRunStatus
+    configuration: dict[str, object]
+    algorithm_version: str
+    input_hash: str
+    as_of: UTCDateTime
+    summary: dict[str, object]
+    created_by_user_id: UUID
+    created_at: UTCDateTime
+    updated_at: UTCDateTime
+
+
+class ImpactResultResponse(ORMResponse):
+    id: UUID
+    run_id: UUID
+    entity_id: UUID
+    entity_name: str
+    entity_type: EntityType
+    depth: int
+    score: float
+    impact_level: Literal["low", "moderate", "high", "critical"]
+    confidence_value: float
+    confidence_label: Literal["low", "medium", "high"]
+    confidence_reason: str
+    primary_path_id: UUID | None
+    trigger_entity_ids: list[UUID]
+    explanation: str
+    result_flags: dict[str, object]
+
+
+class ImpactPathResponse(ORMResponse):
+    id: UUID
+    run_id: UUID
+    entity_id: UUID
+    trigger_entity_id: UUID
+    score: float
+    edge_count: int
+    is_primary: bool
+    provenance: dict[str, object]
+
+
 T = TypeVar("T")
 
 
