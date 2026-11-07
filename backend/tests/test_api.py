@@ -17,6 +17,7 @@ from app.engine import analysis_input_from_snapshot, run_analysis
 from app.main import app
 from app.models import (
     AuditLog,
+    Dependency,
     Entity,
     ImpactPath,
     ImpactPathStep,
@@ -25,6 +26,7 @@ from app.models import (
     OperationalEvent,
     Organization,
     OrganizationMember,
+    Scenario,
     User,
 )
 from app.seed import seed_demo_data
@@ -748,6 +750,331 @@ def test_analysis_runs_are_tenant_scoped_and_failed_run_is_audited(
             )
         )
         assert audit is not None
+
+
+def test_scenario_overlay_run_comparison_and_archive_are_isolated(api_context) -> None:
+    client, values, engine = api_context
+    analyst_headers = headers(values, user="analyst")
+    baseline_response = client.post(
+        f"/api/v1/events/{values['campus_event_id']}/analysis-runs",
+        headers=analyst_headers,
+        json={},
+    )
+    assert baseline_response.status_code == 201
+    baseline_run = baseline_response.json()
+    with Session(engine) as session:
+        baseline_model = session.get(ImpactRun, UUID(baseline_run["id"]))
+        assert baseline_model is not None
+        target_entity = next(
+            item
+            for item in baseline_model.input_snapshot["entities"]
+            if item["name"] == "Practical Session A"
+        )
+        target_entity_id = target_entity["id"]
+        dependency = next(
+            item
+            for item in baseline_model.input_snapshot["dependencies"]
+            if item["source_entity_id"] == values["laboratory_id"]
+            and item["target_entity_id"] == target_entity_id
+        )
+        dependency_id = dependency["id"]
+        original_dependency_weight = dependency["weight"]
+        live_entity = session.get(Entity, UUID(target_entity_id))
+        assert live_entity is not None
+        original_live_mitigation = live_entity.mitigation
+        live_event = session.get(OperationalEvent, UUID(values["campus_event_id"]))
+        assert live_event is not None
+        original_live_title = live_event.title
+        original_live_severity = live_event.severity
+
+    created = client.post(
+        "/api/v1/scenarios",
+        headers=analyst_headers,
+        json={
+            "name": "Laboratory mitigation comparison",
+            "description": "Test a mitigation without changing live data.",
+            "baseline_run_id": baseline_run["id"],
+        },
+    )
+    assert created.status_code == 201
+    scenario_id = created.json()["id"]
+    assert created.json()["version"] == 1
+    assert created.json()["baseline_run_id"] == baseline_run["id"]
+
+    foreign_scenario = client.get(
+        f"/api/v1/scenarios/{scenario_id}",
+        headers=headers(values, organization="transport", user="transport_coordinator"),
+    )
+    assert foreign_scenario.status_code == 404
+    denied_mutation = client.post(
+        f"/api/v1/scenarios/{scenario_id}/interventions",
+        headers=headers(values, user="department"),
+        json={
+            "expected_version": 1,
+            "title": "Denied",
+            "action_type": "mitigation",
+            "target_entity_id": target_entity_id,
+            "rationale": "Not authorized.",
+            "mitigation": 0.9,
+        },
+    )
+    assert denied_mutation.status_code == 403
+
+    event_overlay = client.patch(
+        f"/api/v1/scenarios/{scenario_id}/event",
+        headers=analyst_headers,
+        json={
+            "expected_version": 1,
+            "title": "What if laboratory service is disrupted?",
+            "severity": 90,
+        },
+    )
+    assert event_overlay.status_code == 200
+    assert event_overlay.json()["version"] == 2
+    intervention = client.post(
+        f"/api/v1/scenarios/{scenario_id}/interventions",
+        headers=analyst_headers,
+        json={
+            "expected_version": 2,
+            "title": "Increase session mitigation",
+            "action_type": "mitigation",
+            "target_entity_id": target_entity_id,
+            "rationale": "Model an alternate session arrangement.",
+            "assumptions": {"availability_confirmed": False},
+            "mitigation": 0.9,
+        },
+    )
+    assert intervention.status_code == 201
+    assert intervention.json()["action_type"] == "mitigation"
+    assert intervention.json()["assumptions"] == {"availability_confirmed": False}
+    stale_event_overlay = client.patch(
+        f"/api/v1/scenarios/{scenario_id}/event",
+        headers=analyst_headers,
+        json={"expected_version": 2, "severity": 40},
+    )
+    assert stale_event_overlay.status_code == 409
+    weight_override = client.post(
+        f"/api/v1/scenarios/{scenario_id}/interventions",
+        headers=analyst_headers,
+        json={
+            "expected_version": 3,
+            "title": "Reduce dependency weight",
+            "action_type": "weight_override",
+            "target_dependency_id": dependency_id,
+            "rationale": "Model partial service availability.",
+            "weight": 0.4,
+        },
+    )
+    assert weight_override.status_code == 201
+
+    scenario_run_response = client.post(
+        f"/api/v1/scenarios/{scenario_id}/analysis-runs",
+        headers=analyst_headers,
+        json={"expected_version": 4},
+    )
+    assert scenario_run_response.status_code == 201, scenario_run_response.text
+    scenario_run = scenario_run_response.json()
+    assert scenario_run["scenario_id"] == scenario_id
+    assert scenario_run["input_hash"] != baseline_run["input_hash"]
+    with Session(engine) as session:
+        persisted_scenario_run = session.get(ImpactRun, UUID(scenario_run["id"]))
+        assert persisted_scenario_run is not None
+        assert persisted_scenario_run.input_snapshot["scenario"]["version"] == 4
+        replay = run_analysis(analysis_input_from_snapshot(persisted_scenario_run.input_snapshot))
+        assert replay.input_hash == persisted_scenario_run.input_hash
+
+    comparison = client.get(
+        f"/api/v1/scenarios/{scenario_id}/comparison?scenario_run_id={scenario_run['id']}",
+        headers=analyst_headers,
+    )
+    assert comparison.status_code == 200
+    comparison_body = comparison.json()
+    assert comparison_body["baseline_run_id"] == baseline_run["id"]
+    assert comparison_body["scenario_run_id"] == scenario_run["id"]
+    assert comparison_body["potentially_incomplete"] is False
+    assert {item["action_type"] for item in comparison_body["assumptions"]} == {
+        "mitigation",
+        "weight_override",
+    }
+    changed = next(
+        item for item in comparison_body["items"] if item["entity_id"] == target_entity_id
+    )
+    assert changed["change_type"] == "changed"
+    assert changed["delta"] < 0
+    assert comparison_body["estimated_effect"]["score_delta"] > 0
+
+    repeat_run = client.post(
+        f"/api/v1/scenarios/{scenario_id}/analysis-runs",
+        headers=analyst_headers,
+        json={"expected_version": 4},
+    )
+    assert repeat_run.status_code == 201, repeat_run.text
+    assert repeat_run.json()["input_hash"] == scenario_run["input_hash"]
+
+    deactivation = client.post(
+        f"/api/v1/scenarios/{scenario_id}/interventions",
+        headers=analyst_headers,
+        json={
+            "expected_version": 4,
+            "title": "Model unavailable direct link",
+            "action_type": "deactivate_dependency",
+            "target_dependency_id": dependency_id,
+            "rationale": "Assume the direct route is unavailable.",
+        },
+    )
+    assert deactivation.status_code == 201
+    deactivated_run_response = client.post(
+        f"/api/v1/scenarios/{scenario_id}/analysis-runs",
+        headers=analyst_headers,
+        json={"expected_version": 5},
+    )
+    assert deactivated_run_response.status_code == 201
+    with Session(engine) as session:
+        deactivated_run = session.get(
+            ImpactRun,
+            UUID(deactivated_run_response.json()["id"]),
+        )
+        assert deactivated_run is not None
+        overridden_dependency = next(
+            item
+            for item in deactivated_run.input_snapshot["dependencies"]
+            if item["id"] == dependency_id
+        )
+        assert overridden_dependency["weight"] == pytest.approx(0.4)
+        assert overridden_dependency["is_active"] is False
+        live_dependency = session.get(Dependency, UUID(dependency_id))
+        assert live_dependency is not None
+        assert live_dependency.weight == pytest.approx(original_dependency_weight)
+        assert live_dependency.is_active is True
+
+    archived = client.delete(
+        f"/api/v1/scenarios/{scenario_id}?expected_version=5",
+        headers=analyst_headers,
+    )
+    assert archived.status_code == 200
+    assert archived.json()["status"] == "archived"
+    archived_run = client.post(
+        f"/api/v1/scenarios/{scenario_id}/analysis-runs",
+        headers=analyst_headers,
+        json={"expected_version": 5},
+    )
+    assert archived_run.status_code == 409
+
+    with Session(engine) as session:
+        live_event = session.get(OperationalEvent, UUID(values["campus_event_id"]))
+        assert live_event is not None
+        assert live_event.title == original_live_title
+        assert live_event.severity == original_live_severity
+        live_entity = session.get(Entity, UUID(target_entity_id))
+        assert live_entity is not None
+        assert live_entity.mitigation == pytest.approx(original_live_mitigation)
+        persisted_scenario = session.get(Scenario, UUID(scenario_id))
+        assert persisted_scenario is not None
+        assert persisted_scenario.status == "archived"
+        audit_actions = set(
+            session.scalars(
+                select(AuditLog.action).where(AuditLog.resource_id == UUID(scenario_id))
+            ).all()
+        )
+        assert {
+            "scenario.created",
+            "scenario.event_updated",
+            "scenario.intervention_created",
+            "scenario.archived",
+        } <= audit_actions
+
+
+def test_scenario_hypothetical_dependency_is_draft_and_scenario_owned(api_context) -> None:
+    client, values, engine = api_context
+    analyst_headers = headers(values, user="analyst")
+    baseline = client.post(
+        f"/api/v1/events/{values['campus_event_id']}/analysis-runs",
+        headers=analyst_headers,
+        json={},
+    )
+    assert baseline.status_code == 201
+    with Session(engine) as session:
+        baseline_run = session.get(ImpactRun, UUID(baseline.json()["id"]))
+        assert baseline_run is not None
+        existing_pairs = {
+            (item["source_entity_id"], item["target_entity_id"])
+            for item in baseline_run.input_snapshot["dependencies"]
+        }
+        target_id = next(
+            item["id"]
+            for item in baseline_run.input_snapshot["entities"]
+            if item["id"] != values["laboratory_id"]
+            and (values["laboratory_id"], item["id"]) not in existing_pairs
+        )
+        original_dependency_id = next(
+            item["id"]
+            for item in baseline_run.input_snapshot["dependencies"]
+            if item["source_entity_id"] == values["laboratory_id"]
+        )
+        original_dependency_weight = next(
+            item["weight"]
+            for item in baseline_run.input_snapshot["dependencies"]
+            if item["id"] == original_dependency_id
+        )
+
+    scenario = client.post(
+        "/api/v1/scenarios",
+        headers=analyst_headers,
+        json={"name": "Hypothetical dependency", "baseline_run_id": baseline.json()["id"]},
+    )
+    assert scenario.status_code == 201
+    scenario_id = scenario.json()["id"]
+    created = client.post(
+        f"/api/v1/scenarios/{scenario_id}/interventions",
+        headers=analyst_headers,
+        json={
+            "expected_version": 1,
+            "title": "Add alternate laboratory route",
+            "action_type": "hypothetical_dependency",
+            "target_entity_id": target_id,
+            "rationale": "Assume an alternate arrangement is possible.",
+            "assumptions": {"capacity": "unconfirmed"},
+            "source_entity_id": values["laboratory_id"],
+            "relationship_type": "supports",
+            "relationship_label": "alternate support",
+            "weight": 0.4,
+        },
+    )
+    assert created.status_code == 201
+    run = client.post(
+        f"/api/v1/scenarios/{scenario_id}/analysis-runs",
+        headers=analyst_headers,
+        json={"expected_version": 2},
+    )
+    assert run.status_code == 201, run.text
+    with Session(engine) as session:
+        persisted_run = session.get(ImpactRun, UUID(run.json()["id"]))
+        assert persisted_run is not None
+        snapshot_dependency = next(
+            item for item in persisted_run.input_snapshot["dependencies"] if item["is_hypothetical"]
+        )
+        original_dependency = session.get(Dependency, UUID(original_dependency_id))
+        assert original_dependency is not None
+        assert original_dependency.weight == pytest.approx(original_dependency_weight)
+        hypothetical_path = session.scalar(
+            select(ImpactPath).where(
+                ImpactPath.run_id == UUID(run.json()["id"]),
+                ImpactPath.entity_id == UUID(target_id),
+            )
+        )
+        assert hypothetical_path is not None
+        assert any(step["is_hypothetical"] for step in hypothetical_path.provenance["steps"])
+        replay = run_analysis(analysis_input_from_snapshot(persisted_run.input_snapshot))
+        assert replay.input_hash == persisted_run.input_hash
+    assert snapshot_dependency["review_status"] == "draft"
+    assert snapshot_dependency["weight"] == pytest.approx(0.4)
+    assert snapshot_dependency["is_hypothetical"] is True
+    comparison = client.get(
+        f"/api/v1/scenarios/{scenario_id}/comparison?scenario_run_id={run.json()['id']}",
+        headers=analyst_headers,
+    )
+    assert comparison.status_code == 200
+    assert comparison.json()["assumptions"][0]["action_type"] == "hypothetical_dependency"
 
 
 def test_openapi_snapshot_matches_application_contract() -> None:

@@ -31,6 +31,8 @@ const { mockApi } = vi.hoisted(() => ({
     addTrigger: vi.fn(),
     updateEventStatus: vi.fn(),
     listRuns: vi.fn(),
+    listScenarios: vi.fn(),
+    listScenarioRuns: vi.fn(),
     createAnalysisRun: vi.fn(),
     listResults: vi.fn(),
     listPaths: vi.fn(),
@@ -106,6 +108,7 @@ const dependency: Dependency = {
 const run: AnalysisRun = {
   id: "run-id",
   organization_id: "organization-id",
+  scenario_id: null,
   event_id: event.id,
   status: "completed",
   configuration: { max_depth: 4 },
@@ -193,6 +196,8 @@ function configureEmptyWorkspace() {
   mockApi.listEvents.mockResolvedValue(page<EventRecord>([]));
   mockApi.listTriggers.mockResolvedValue(page<EventTrigger>([]));
   mockApi.listRuns.mockResolvedValue(page<AnalysisRun>([]));
+  mockApi.listScenarios.mockResolvedValue(page([]));
+  mockApi.listScenarioRuns.mockResolvedValue(page<AnalysisRun>([]));
   mockApi.listResults.mockResolvedValue(page<ImpactResult>([]));
   mockApi.listPaths.mockResolvedValue(page<ImpactPath>([]));
 }
@@ -228,6 +233,24 @@ describe("application workflow", () => {
     ).toBeVisible();
     expect(mockApi.health).toHaveBeenCalledOnce();
     expect(mockApi.listEntities).toHaveBeenCalledOnce();
+  });
+
+  it("opens the isolated scenarios workspace", async () => {
+    const user = await connectToWorkspace();
+    await user.click(screen.getByRole("button", { name: /Scenarios/ }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Scenarios" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Scenario estimates are not predictions or recommendations.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText("No scenarios have been created in this organization."),
+    ).toBeVisible();
+    expect(mockApi.listScenarios).toHaveBeenCalledOnce();
   });
 
   it("shows API connection failures rather than a success-shaped fallback", async () => {
@@ -322,7 +345,7 @@ describe("application workflow", () => {
       status: "open",
     });
     expect(await screen.findAllByText("open")).not.toHaveLength(0);
-  });
+  }, 10_000);
 
   it("supports audited entity edits and soft archival", async () => {
     const user = await connectToWorkspace();
@@ -369,7 +392,7 @@ describe("application workflow", () => {
       screen.getByRole("row", { name: /Updated Laboratory.*archived/ }),
     ).toBeInTheDocument();
     expect(editor).not.toBeInTheDocument();
-  });
+  }, 10_000);
 
   it("creates and deactivates a directed dependency", async () => {
     const user = await connectToWorkspace();

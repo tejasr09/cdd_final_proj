@@ -78,6 +78,9 @@ pagination, errors, concurrency checks, and OpenAPI snapshot instructions.
 Use the analysis routes documented there to run an open seeded event and
 inspect its paginated results and path provenance. Analysis values are
 heuristic estimates, not probabilities or guaranteed predictions.
+The scenarios routes create versioned what-if overlays from a completed live
+analysis, run against its immutable snapshot, and compare estimated changes
+without mutating live records.
 
 The frontend connects to the API through Vite's same-origin `/api` proxy by
 default; leave the API base URL blank in the connection form when running the

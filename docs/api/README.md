@@ -71,8 +71,42 @@ the database supports row locks.
   persist its immutable input snapshot, results, paths and audit record.
 - `/analysis-runs`: list runs, optionally filtered by `event_id`; retrieve a
   run, its paginated results, an individual result, or the retained paths for
-  that result.
+  that result. The collection also accepts `scenario_id`.
+- `/scenarios`: create scenarios from completed live-run snapshots and list
+  scenarios in the active organization.
+- `/scenarios/{scenario_id}`: retrieve scenario overlays, update metadata with
+  optimistic version checks, or archive scenario-owned history.
+- `/scenarios/{scenario_id}/event`: update the scenario-only event overlay.
+- `/scenarios/{scenario_id}/interventions`: add node mitigation, dependency
+  weight override, dependency deactivation, or a hypothetical dependency
+  marked `draft`.
+- `/scenarios/{scenario_id}/analysis-runs`: execute against the immutable
+  baseline snapshot plus the current overlay, saving a reproducible scenario
+  run without changing live records.
+- `/scenarios/{scenario_id}/comparison`: compare a scenario run with its
+  baseline by entity, including estimated score deltas and assumptions.
 - `/health/live` and `/health/ready`: process liveness and database readiness.
+
+Scenario creation, updates, interventions, execution, and archival require
+`analysis:run`; listing, retrieval, and comparison require `event:read`.
+Mutation requests include `expected_version`, and each successful mutation
+increments the version and writes an audit event. Archive preserves scenario
+history; applying a scenario to live data is not supported.
+
+To create a scenario, send `POST /api/v1/scenarios` with a completed live
+`baseline_run_id`, then use `PATCH /api/v1/scenarios/{scenario_id}/event`,
+`POST /api/v1/scenarios/{scenario_id}/interventions`, and
+`POST /api/v1/scenarios/{scenario_id}/analysis-runs`. The run request includes
+the current `expected_version`. Retrieve its comparison with
+`GET /api/v1/scenarios/{scenario_id}/comparison?scenario_run_id=<run UUID>`.
+Historical runs can also be listed using
+`GET /api/v1/analysis-runs?scenario_id=<scenario UUID>`.
+
+Scenario comparisons report heuristic estimates, not predictions,
+recommendations, or guaranteed effects. The response includes baseline and
+scenario run IDs, score deltas, changed/added/removed/unchanged entities,
+assumptions, and result completeness. Scenario overlays remain separate from
+live event, entity, and dependency records.
 
 ### Analysis request and responses
 
@@ -132,5 +166,5 @@ replayed by the engine without reading changed live records.
 Run creation and execution are synchronous. Database row locks are applied
 where supported, but SQLite does not provide equivalent row-lock behavior and
 PostgreSQL concurrent-insert consistency has not yet been stress-tested.
-Scenario, organization/member administration, audit-query and
-production sign-in/session endpoints are not implemented.
+Organization/member administration, audit-query and production
+sign-in/session endpoints are not implemented.

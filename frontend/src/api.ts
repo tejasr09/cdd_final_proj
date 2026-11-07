@@ -69,6 +69,7 @@ export type AnalysisRun = {
   id: string;
   organization_id: string;
   event_id: string;
+  scenario_id: string | null;
   status:
     | "pending"
     | "running"
@@ -84,6 +85,100 @@ export type AnalysisRun = {
   created_by_user_id: string;
   created_at: string;
   updated_at: string;
+};
+
+export type Scenario = {
+  id: string;
+  organization_id: string;
+  name: string;
+  description: string | null;
+  baseline_run_id: string | null;
+  status: "draft" | "archived";
+  version: number;
+  created_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ScenarioDetail = Scenario & {
+  event_overlay: {
+    event: {
+      id: string;
+      title: string;
+      status: EventRecord["status"];
+      severity: number;
+      start_at: string;
+    };
+    triggers: Array<{
+      entity_id: string;
+      exposure: number;
+      rationale: string | null;
+    }>;
+  };
+  entity_overrides: Array<{
+    id: string;
+    entity_id: string;
+    exposure: number | null;
+    mitigation: number | null;
+    status: Entity["status"] | null;
+    rationale: string | null;
+  }>;
+  dependency_overrides: Array<{
+    id: string;
+    dependency_id: string | null;
+    source_entity_id: string | null;
+    target_entity_id: string | null;
+    relationship_type: string | null;
+    relationship_label: string | null;
+    weight: number | null;
+    is_active: boolean | null;
+    review_status: Dependency["review_status"] | null;
+    rationale: string | null;
+  }>;
+  interventions: ScenarioIntervention[];
+};
+
+export type ScenarioInterventionType =
+  | "mitigation"
+  | "weight_override"
+  | "deactivate_dependency"
+  | "hypothetical_dependency";
+
+export type ScenarioIntervention = {
+  id: string;
+  scenario_id: string;
+  title: string;
+  action_type: ScenarioInterventionType;
+  target_entity_id: string | null;
+  target_dependency_id: string | null;
+  rationale: string;
+  assumptions: Record<string, unknown>;
+  author_user_id: string;
+  created_at: string;
+};
+
+export type ScenarioComparison = {
+  scenario_id: string;
+  baseline_run_id: string;
+  scenario_run_id: string;
+  scenario_version: number;
+  baseline_status: AnalysisRun["status"];
+  scenario_status: AnalysisRun["status"];
+  potentially_incomplete: boolean;
+  estimated_effect: {
+    baseline_total_score: number;
+    scenario_total_score: number;
+    score_delta: number;
+  };
+  assumptions: ScenarioIntervention[];
+  items: Array<{
+    entity_id: string;
+    entity_name: string;
+    change_type: "added" | "removed" | "changed" | "unchanged";
+    baseline_score: number;
+    scenario_score: number;
+    delta: number;
+  }>;
 };
 
 export type ImpactResult = {
@@ -419,6 +514,99 @@ export class ApiClient {
   listRuns(eventId: string) {
     const params = new URLSearchParams({ event_id: eventId, limit: "100" });
     return this.page<AnalysisRun>("/api/v1/analysis-runs", params);
+  }
+
+  listScenarioRuns(scenarioId: string) {
+    const params = new URLSearchParams({
+      scenario_id: scenarioId,
+      limit: "100",
+    });
+    return this.page<AnalysisRun>("/api/v1/analysis-runs", params);
+  }
+
+  listScenarios() {
+    return this.page<Scenario>("/api/v1/scenarios");
+  }
+
+  getScenario(scenarioId: string) {
+    return this.request<ScenarioDetail>(`/api/v1/scenarios/${scenarioId}`);
+  }
+
+  createScenario(payload: {
+    name: string;
+    description?: string;
+    baseline_run_id: string;
+  }) {
+    return this.request<Scenario>("/api/v1/scenarios", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  updateScenarioEvent(
+    scenarioId: string,
+    payload: {
+      expected_version: number;
+      title?: string;
+      severity?: number;
+      start_at?: string;
+    },
+  ) {
+    return this.request<Scenario>(`/api/v1/scenarios/${scenarioId}/event`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  createScenarioIntervention(
+    scenarioId: string,
+    payload: {
+      expected_version: number;
+      title: string;
+      action_type: ScenarioInterventionType;
+      target_entity_id?: string;
+      target_dependency_id?: string;
+      source_entity_id?: string;
+      mitigation?: number;
+      weight?: number;
+      relationship_type?: string;
+      relationship_label?: string;
+      rationale: string;
+      assumptions: Record<string, unknown>;
+    },
+  ) {
+    return this.request<ScenarioIntervention>(
+      `/api/v1/scenarios/${scenarioId}/interventions`,
+      { method: "POST", body: JSON.stringify(payload) },
+    );
+  }
+
+  runScenario(
+    scenarioId: string,
+    payload: {
+      expected_version: number;
+    },
+  ) {
+    return this.request<AnalysisRun>(
+      `/api/v1/scenarios/${scenarioId}/analysis-runs`,
+      { method: "POST", body: JSON.stringify(payload) },
+    );
+  }
+
+  compareScenario(scenarioId: string, scenarioRunId: string) {
+    const params = new URLSearchParams({ scenario_run_id: scenarioRunId });
+    return this.request<ScenarioComparison>(
+      `/api/v1/scenarios/${scenarioId}/comparison?${params.toString()}`,
+    );
+  }
+
+  archiveScenario(scenarioId: string, expectedVersion: number) {
+    const params = new URLSearchParams({
+      expected_version: String(expectedVersion),
+    });
+    return this.request<Scenario>(`/api/v1/scenarios/${scenarioId}?${params}`, {
+      method: "DELETE",
+    });
   }
 
   createAnalysisRun(eventId: string) {

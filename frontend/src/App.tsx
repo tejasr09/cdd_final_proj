@@ -12,13 +12,15 @@ import {
   type ImpactResult,
 } from "./api";
 import ImpactGraph from "./ImpactGraph";
+import ScenarioWorkspace from "./ScenarioWorkspace";
 
-type WorkspaceSection = "events" | "dependencies" | "analysis";
+type WorkspaceSection = "events" | "dependencies" | "analysis" | "scenarios";
 
 const sections: { id: WorkspaceSection; label: string }[] = [
   { id: "events", label: "Events" },
   { id: "dependencies", label: "Dependencies" },
   { id: "analysis", label: "Analysis" },
+  { id: "scenarios", label: "Scenarios" },
 ];
 
 const entityTypes: EntityType[] = [
@@ -1975,6 +1977,15 @@ function App() {
                   </div>
                 )}
               </section>
+            )}
+
+            {section === "scenarios" && (
+              <ScenarioWorkspace
+                client={client}
+                dependencies={dependencies}
+                entities={entities}
+                runs={runs}
+              />
             )}
           </>
         )}

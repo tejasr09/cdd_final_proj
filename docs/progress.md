@@ -1,10 +1,10 @@
 # Ripple Effect — Project Progress
 
 - Last updated: 2026-11-07
-- Current phase: Phase 6 — Frontend integration implemented; awaiting human review
-- Current branch: `feature/frontend-integration`
-- Current commit: Phase 6 implementation is the latest local commit; resolve its hash with `git log -1 --format=%h`
-- Overall status: Phase 6 exit criteria are locally verified. Stop here for human review and explicit Phase 7 approval. Phase 2 remains partial; its human-led work may continue in parallel.
+- Current phase: Phase 7 — Scenario simulation and comparison implemented; awaiting human review
+- Current branch: `feature/scenario-simulation`
+- Current commit: Phase 7 implementation and report are ready for a local commit; record its hash after commit
+- Overall status: Phase 7 exit criteria are locally verified. Stop here for human review and explicit Phase 8 approval. Phase 2 remains partial; its human-led work may continue in parallel.
 
 ## Done
 
@@ -19,12 +19,14 @@
 - Phase 5 implements the pure deterministic graph engine, bounded simple-path traversal, scoring/aggregation/confidence, safety-limit reporting, canonical snapshots and replay, tenant-scoped analysis endpoints, persistence, audit records, an Alembic migration, and updated API/OpenAPI documentation. Evidence is in `docs/reports/phase5-report.md`.
 - Phase 6 replaces the synthetic-only frontend with a typed API-connected React workspace for event, trigger, entity and dependency management; analysis history, explanations, React Flow visualization and a keyboard-accessible path list. Evidence is in `docs/reports/phase6-report.md`.
 - Phase 6 frontend unit/accessibility tests, lint, formatting, type-check, production build, Playwright journey and a local seeded-API browser journey passed; details and limitations are recorded in the Phase 6 report.
+- Phase 7 implements tenant-scoped, versioned scenario overlays and D15 interventions; scenario runs replay immutable baseline snapshots, persist reproducible inputs, compare entity-level score changes, and never modify live records. Evidence is recorded in `docs/reports/phase7-report.md`.
+- Phase 7 backend scenario isolation/authorization/audit tests, the full backend suite, frontend tests, lint/format/type-check/build, OpenAPI snapshot, and the existing Playwright journey passed. No database migration or runtime dependency was required.
 
 ## In progress
 
 - Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
 - Human-owned Figma prototype and task-based testing; review/adapt the React concept, create the Figma artifact, and provide genuine findings/results.
-- Human review of `docs/reports/phase6-report.md`; do not begin Phase 7 until explicitly approved.
+- Human review of `docs/reports/phase7-report.md`; do not begin Phase 8 until explicitly approved.
 
 ## Ambiguity register
 
@@ -47,10 +49,9 @@
 
 | Order | Work item | Acceptance criteria |
 |---|---|---|
-| Next, after explicit approval | Phase 7 scenarios | Scenario/baseline comparisons work and isolation tests prove live records unchanged |
+| Next, after explicit approval | Phase 8 delivery | Local Compose is reproducible and approved CI checks pass; image/build evidence is genuine |
 | Parallel human work | Complete Phase 2 research and Figma work | Human-owned clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
-| Later | Phase 7 scenarios | Scenario/baseline comparisons work and isolation tests prove live records unchanged |
-| Later | Phase 8 delivery | Local Compose is reproducible and approved CI checks pass; image/build evidence is genuine |
+| Later | Phase 7 human review | Review scenario isolation, authorization, comparison semantics, API contract and Phase 7 report |
 | Later | Phase 9 cloud | Human-approved ACR/ACI deployment uses recorded immutable digest; health, rollback and cleanup are verified |
 | Later | Phase 11 release hardening | Security, tests, accessibility, docs and evidence are reviewed; unmet criteria/limitations are explicit |
 | Optional | Phase 10 Jenkins/Kubernetes | Only after baseline and explicit approval; optional work does not delay required delivery |
@@ -64,6 +65,7 @@
 - The former synthetic click-through remains documented as historical; the active frontend uses API data. Phase 2 interview, Figma and usability evidence remains absent.
 - Live PostgreSQL migration execution and Docker-based startup could not be verified. PostgreSQL DDL ordering was checked offline; SQLite migration and tenant-reference behavior were exercised.
 - Analysis execution is synchronous; PostgreSQL concurrent-insert snapshot consistency has not been stress-tested. Compose migration startup wiring remains in Phase 8.
+- Scenario behavior is verified with SQLite API tests; live PostgreSQL concurrent scenario updates and Docker/Compose execution remain unverified.
 - CI workflows and cloud resources remain future-phase/human work.
 - The root `agent-brief.md` points to `docs/agent-brief.md`, which is absent. Phase 4 requirements were taken from the available root continuation brief; neither brief was rewritten.
 
@@ -123,6 +125,15 @@
 | 2026-11-07 | Local seeded-API browser journey | PASS | Chrome connected through Vite proxy, created an event, added a trigger, opened it, ran analysis and inspected a source-to-target path; no page errors |
 | 2026-11-07 | Initial frontend test/format iterations | FAIL, resolved | New test expectations were aligned to updated event timestamps and independent relationship labels; formatter initially inspected generated Playwright output, now excluded |
 | 2026-11-07 | Frontend dependency/container/secret scan | NOT RUN | No Phase 6 scan run; inherited development-dependency audit finding remains open. No containers or secrets were introduced |
+| 2026-11-07 | `uv run --locked pytest tests\test_api.py -k scenario -q` in `backend` | PASS | 3 scenario tests passed, 9 deselected |
+| 2026-11-07 | `uv run --locked pytest` in `backend` | PASS | 88 tests passed |
+| 2026-11-07 | `uv run --locked ruff check app tests scripts` and `uv run --locked ruff format --check app tests scripts` in `backend` | PASS | Ruff clean; 19 files already formatted |
+| 2026-11-07 | `uv run --locked python -m scripts.export_openapi` in `backend` | PASS | Regenerated scenario endpoints and schemas in the reviewed OpenAPI snapshot; snapshot equality is tested |
+| 2026-11-07 | `npm test -- --run --pool=forks --maxWorkers=1` in `frontend` | PASS | 12 tests passed across 3 files |
+| 2026-11-07 | `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run build` in `frontend` | PASS | ESLint, Prettier, TypeScript, and Vite production build succeeded |
+| 2026-11-07 | `$env:PLAYWRIGHT_USE_CHROME='1'; npm run test:e2e` in `frontend` | PASS | 1 event-to-analysis browser journey passed |
+| 2026-11-07 | Initial frontend suite under default per-test timeout | FAIL, resolved | Multi-step UI tests exceeded 5 seconds; extended two tests to 10 seconds, and the final full frontend suite passed |
+| 2026-11-07 | Live PostgreSQL, Docker/Compose, dependency scan, secret scan | NOT RUN | Not performed in Phase 7; no migration or runtime dependency was added |
 
 ## Decisions and ADRs
 
@@ -136,6 +147,7 @@
 - The human explicitly approved Phase 4. Phase 4 changes are isolated on `feature/api-foundation`; stop after this report until Phase 5 is explicitly approved.
 - The human explicitly approved Phase 5 and NetworkX. Phase 5 changes are isolated on `feature/engine-ripple`; stop after this report until Phase 6 is explicitly approved.
 - The human explicitly approved Phase 6 and selected React Flow, approving `@xyflow/react` as the UI runtime dependency. Phase 6 changes are isolated on `feature/frontend-integration`; stop after this report until Phase 7 is explicitly approved.
+- The human explicitly approved Phase 7. Phase 7 work is isolated on `feature/scenario-simulation`; stop after this report until Phase 8 is explicitly approved.
 - API updates and lifecycle changes require `expected_updated_at`; supported databases use row locks where available. Database integrity conflicts return the standard 409 error envelope.
 - `httpx==0.28.1` was added to the backend development dependency group for ASGI integration tests; it is not a runtime dependency.
 - PostgreSQL remains the authoritative store; SQLite is used for local development/tests. Live PostgreSQL migration execution was not available.
@@ -144,6 +156,7 @@
 - Phase 4 implementation evidence and limitations: `docs/reports/phase4-report.md`.
 - Phase 5 implementation evidence and limitations: `docs/reports/phase5-report.md`.
 - Phase 6 implementation evidence and limitations: `docs/reports/phase6-report.md`.
+- Phase 7 implementation evidence and limitations: `docs/reports/phase7-report.md`.
 
 ## Risk register
 
@@ -155,23 +168,24 @@
 | Azure subscription/cost/registry needs unknown | Deployment plan may be unusable or incur cost | Human confirms availability and budget; no cloud actions by agent | TODO(human), open |
 | UX evidence unavailable | Design could be mistaken for validated research | Keep personas as hypotheses and mark research TODO(human) | Team, open |
 | Dependency path explosion | Resource exhaustion or incomplete analysis | Deterministic node/path ceilings and visible incomplete status are implemented and tested; synchronous execution and concurrency still need production-scale review | Engineering, active |
-| Tenant leakage or scenario mutation | Cross-organization disclosure or live-data corruption | Composite constraints, scoped access and isolation tests are implemented; live PostgreSQL verification and scenario execution tests remain open | Engineering, active |
+| Tenant leakage or scenario mutation | Cross-organization disclosure or live-data corruption | Scoped access and API isolation/live-record tests pass; live PostgreSQL verification remains open | Engineering, monitoring |
 
 ## Human actions pending
 
 - Conduct and document Phase 2 interviews with suitable participants, appropriate consent, anonymized notes, and evidence-backed findings.
 - Create/own the clickable Figma prototype, conduct task-based tests, and provide actual frames/results for review.
-- Review `docs/reports/phase6-report.md`, especially the local-auth boundary, graph/list alternative, user journey, and outstanding Phase 2 evidence; explicitly approve Phase 7 before implementation proceeds.
+- Review `docs/reports/phase7-report.md`, including scenario isolation and comparison behavior, and explicitly approve Phase 8 before implementation proceeds.
 - Complete Phase 2 human research/Figma/usability deliverables when ready; Phase 2 remains partial but may run in parallel with Phases 3–5.
 - Start Docker Desktop and verify Compose startup when available.
 - Revisit the minimatch development-tool advisory before release.
-- Do not begin Phase 7 until explicitly approved after the Phase 6 report.
+- Do not begin Phase 8 until explicitly approved after the Phase 7 report.
 
 ## Evidence index
 
 - `docs/reports/phase-0-report.md`
 - `docs/reports/phase3-report.md`
 - `docs/reports/phase4-report.md`, `docs/reports/phase5-report.md`, and `docs/reports/phase6-report.md`
+- `docs/reports/phase7-report.md`
 - `docs/api/README.md` and `docs/api/openapi.json`
 - `docs/adr/`
 - `docs/viva-notes.md` (data/tenancy and frontend topics updated with implemented evidence and limitations)
@@ -180,8 +194,8 @@
 
 ## Session handoff
 
-- Last completed task: Phase 6 frontend integration on `feature/frontend-integration`; see `docs/reports/phase6-report.md`.
-- Exact next task: human review of Phase 6, then explicit Phase 7 approval. Phase 2 human-led work can proceed in parallel when ready.
+- Last completed task: Phase 7 scenario simulation on `feature/scenario-simulation`; see `docs/reports/phase7-report.md`.
+- Exact next task: human review of Phase 7, then explicit Phase 8 approval. Phase 2 human-led work can proceed in parallel when ready.
 - Files to read first: both root-level briefs, this file, `docs/reports/phase3-report.md`, and `docs/architecture/security-and-tenancy.md`.
 - Commands to verify: `uv run --locked pytest`; `uv run --locked ruff check app tests scripts`; `uv run --locked ruff format --check app tests scripts`; `uv run --locked alembic check`. PostgreSQL/Docker live checks are outstanding.
-- Approval needed: Phase 7 approval. Phase 2 evidence, GitHub Actions, remote operations, and cloud changes retain separate approval gates.
+- Approval needed: Phase 8 approval. Phase 2 evidence, GitHub Actions, remote operations, and cloud changes retain separate approval gates.

@@ -18,6 +18,17 @@ from app.analysis_service import (
 from app.auth import get_active_membership
 from app.database import get_session
 from app.models import ImpactResult, OrganizationMember
+from app.scenario_service import (
+    archive_scenario_for_member,
+    compare_scenario_runs_for_member,
+    create_intervention_for_member,
+    create_scenario_analysis_run_for_member,
+    create_scenario_for_member,
+    get_scenario_detail_for_member,
+    page_scenarios_for_member,
+    update_scenario_event_for_member,
+    update_scenario_for_member,
+)
 from app.schemas import (
     AnalysisRunCreate,
     AnalysisRunResponse,
@@ -42,6 +53,15 @@ from app.schemas import (
     ImpactResultResponse,
     PageResponse,
     ReviewStatus,
+    ScenarioAnalysisRunCreate,
+    ScenarioComparisonResponse,
+    ScenarioCreate,
+    ScenarioDetailResponse,
+    ScenarioEventUpdate,
+    ScenarioInterventionCreate,
+    ScenarioInterventionResponse,
+    ScenarioResponse,
+    ScenarioUpdate,
     UTCDateTime,
 )
 from app.services import (
@@ -659,6 +679,7 @@ def list_analysis_runs_endpoint(
     limit: PageLimit = 50,
     offset: PageOffset = 0,
     event_id: UUID | None = None,
+    scenario_id: UUID | None = None,
 ) -> dict[str, object]:
     items, total = page_analysis_runs_for_member(
         session,
@@ -666,6 +687,7 @@ def list_analysis_runs_endpoint(
         limit=limit,
         offset=offset,
         event_id=event_id,
+        scenario_id=scenario_id,
     )
     return _page(items, total, limit, offset)
 
@@ -756,3 +778,248 @@ def list_impact_paths_endpoint(
         offset=offset,
     )
     return _page([ImpactPathResponse.model_validate(item) for item in items], total, limit, offset)
+
+
+@router.post(
+    "/scenarios",
+    response_model=ScenarioResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["scenarios"],
+    summary="Create a scenario from a live baseline run",
+    description=(
+        "Requires analysis:run permission. The baseline must be a completed live run "
+        "in the active organization."
+    ),
+)
+def create_scenario_endpoint(
+    payload: ScenarioCreate,
+    request: Request,
+    membership: MembershipDependency,
+    session: SessionDependency,
+) -> ScenarioResponse:
+    scenario = create_scenario_for_member(
+        session,
+        membership,
+        payload,
+        request_id=_request_id(request),
+    )
+    _commit(session)
+    return ScenarioResponse.model_validate(scenario)
+
+
+@router.get(
+    "/scenarios",
+    response_model=PageResponse[ScenarioResponse],
+    tags=["scenarios"],
+    summary="List scenarios",
+    description="Requires event:read permission. Results use stable creation-time/UUID ordering.",
+)
+def list_scenarios_endpoint(
+    membership: MembershipDependency,
+    session: SessionDependency,
+    limit: PageLimit = 50,
+    offset: PageOffset = 0,
+) -> dict[str, object]:
+    items, total = page_scenarios_for_member(
+        session,
+        membership,
+        limit=limit,
+        offset=offset,
+    )
+    return _page(items, total, limit, offset)
+
+
+@router.get(
+    "/scenarios/{scenario_id}",
+    response_model=ScenarioDetailResponse,
+    tags=["scenarios"],
+    summary="Retrieve a scenario and its overlays",
+    description="Requires event:read permission; cross-organization scenarios return 404.",
+)
+def get_scenario_endpoint(
+    scenario_id: UUID,
+    membership: MembershipDependency,
+    session: SessionDependency,
+) -> ScenarioDetailResponse:
+    detail = get_scenario_detail_for_member(session, membership, scenario_id)
+    scenario = ScenarioResponse.model_validate(detail["scenario"]).model_dump()
+    return ScenarioDetailResponse.model_validate(
+        {
+            **scenario,
+            "event_overlay": detail["event_overlay"],
+            "entity_overrides": detail["entity_overrides"],
+            "dependency_overrides": detail["dependency_overrides"],
+            "interventions": detail["interventions"],
+        }
+    )
+
+
+@router.patch(
+    "/scenarios/{scenario_id}",
+    response_model=ScenarioResponse,
+    tags=["scenarios"],
+    summary="Update scenario metadata",
+    description="Requires analysis:run permission and a matching expected version.",
+)
+def update_scenario_endpoint(
+    scenario_id: UUID,
+    payload: ScenarioUpdate,
+    request: Request,
+    membership: MembershipDependency,
+    session: SessionDependency,
+) -> ScenarioResponse:
+    scenario = update_scenario_for_member(
+        session,
+        membership,
+        scenario_id,
+        payload,
+        request_id=_request_id(request),
+    )
+    _commit(session)
+    return ScenarioResponse.model_validate(scenario)
+
+
+@router.patch(
+    "/scenarios/{scenario_id}/event",
+    response_model=ScenarioResponse,
+    tags=["scenarios"],
+    summary="Update the scenario event overlay",
+    description=(
+        "Requires analysis:run permission. Changes only the scenario snapshot, "
+        "never the live event."
+    ),
+)
+def update_scenario_event_endpoint(
+    scenario_id: UUID,
+    payload: ScenarioEventUpdate,
+    request: Request,
+    membership: MembershipDependency,
+    session: SessionDependency,
+) -> ScenarioResponse:
+    scenario = update_scenario_event_for_member(
+        session,
+        membership,
+        scenario_id,
+        payload,
+        request_id=_request_id(request),
+    )
+    _commit(session)
+    return ScenarioResponse.model_validate(scenario)
+
+
+@router.post(
+    "/scenarios/{scenario_id}/interventions",
+    response_model=ScenarioInterventionResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["scenarios"],
+    summary="Add a versioned scenario intervention",
+    description=(
+        "Supports mitigation, dependency weight override, dependency deactivation, "
+        "and hypothetical draft dependency actions. Effectiveness is derived by comparison."
+    ),
+)
+def create_scenario_intervention_endpoint(
+    scenario_id: UUID,
+    payload: ScenarioInterventionCreate,
+    request: Request,
+    membership: MembershipDependency,
+    session: SessionDependency,
+) -> ScenarioInterventionResponse:
+    intervention = create_intervention_for_member(
+        session,
+        membership,
+        scenario_id,
+        payload,
+        request_id=_request_id(request),
+    )
+    _commit(session)
+    return ScenarioInterventionResponse.model_validate(intervention)
+
+
+@router.post(
+    "/scenarios/{scenario_id}/analysis-runs",
+    response_model=AnalysisRunResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["scenarios"],
+    summary="Run scenario analysis",
+    description=(
+        "Requires analysis:run permission and a matching scenario version. Runs use "
+        "the immutable baseline snapshot plus overlays and never update live records."
+    ),
+)
+def create_scenario_analysis_run_endpoint(
+    scenario_id: UUID,
+    payload: ScenarioAnalysisRunCreate,
+    request: Request,
+    membership: MembershipDependency,
+    session: SessionDependency,
+) -> AnalysisRunResponse:
+    run = create_scenario_analysis_run_for_member(
+        session,
+        membership,
+        scenario_id,
+        payload,
+        request_id=_request_id(request),
+    )
+    _commit(session)
+    if run.status == "failed":
+        diagnostic_id = run.summary.get("diagnostic_id", "unavailable")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Scenario analysis failed. Diagnostic ID: {diagnostic_id}",
+        )
+    return AnalysisRunResponse.model_validate(run)
+
+
+@router.get(
+    "/scenarios/{scenario_id}/comparison",
+    response_model=ScenarioComparisonResponse,
+    tags=["scenarios"],
+    summary="Compare baseline and scenario results",
+    description=(
+        "Requires event:read permission. Returns entity-level score changes and "
+        "the scenario assumptions; score deltas are estimates, not guaranteed effects."
+    ),
+)
+def compare_scenario_endpoint(
+    scenario_id: UUID,
+    scenario_run_id: UUID,
+    membership: MembershipDependency,
+    session: SessionDependency,
+) -> ScenarioComparisonResponse:
+    return ScenarioComparisonResponse.model_validate(
+        compare_scenario_runs_for_member(
+            session,
+            membership,
+            scenario_id,
+            scenario_run_id,
+        )
+    )
+
+
+@router.delete(
+    "/scenarios/{scenario_id}",
+    response_model=ScenarioResponse,
+    tags=["scenarios"],
+    summary="Archive a scenario",
+    description=(
+        "Requires analysis:run permission and a matching expected version. "
+        "Archival retains scenario-owned history and does not change live records."
+    ),
+)
+def archive_scenario_endpoint(
+    scenario_id: UUID,
+    request: Request,
+    membership: MembershipDependency,
+    session: SessionDependency,
+    expected_version: Annotated[int, Query(ge=1)],
+) -> ScenarioResponse:
+    scenario = archive_scenario_for_member(
+        session,
+        membership,
+        scenario_id,
+        expected_version,
+        request_id=_request_id(request),
+    )
+    _commit(session)
+    return ScenarioResponse.model_validate(scenario)

@@ -218,6 +218,245 @@ class AnalysisRunCreate(RequestModel):
     include_trigger_entities: bool = True
 
 
+class ScenarioCreate(RequestModel):
+    name: str = Field(min_length=1, max_length=160)
+    description: str | None = Field(default=None, max_length=5000)
+    baseline_run_id: UUID
+
+    @model_validator(mode="after")
+    def validate_name(self) -> "ScenarioCreate":
+        if not self.name.strip():
+            raise ValueError("Scenario name must not be empty.")
+        return self
+
+
+class ScenarioUpdate(RequestModel):
+    expected_version: int = Field(ge=1)
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    description: str | None = Field(default=None, max_length=5000)
+
+    @model_validator(mode="after")
+    def require_changes(self) -> "ScenarioUpdate":
+        if self.model_fields_set <= {"expected_version"}:
+            raise ValueError("At least one scenario field must be provided.")
+        if self.name is not None and not self.name.strip():
+            raise ValueError("Scenario name must not be empty.")
+        return self
+
+
+class ScenarioEventUpdate(RequestModel):
+    expected_version: int = Field(ge=1)
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    severity: int | None = Field(default=None, ge=0, le=100)
+    start_at: UTCDateTime | None = None
+
+    @model_validator(mode="after")
+    def require_changes(self) -> "ScenarioEventUpdate":
+        if self.model_fields_set <= {"expected_version"}:
+            raise ValueError("At least one event overlay field must be provided.")
+        if any(
+            getattr(self, field) is None for field in self.model_fields_set - {"expected_version"}
+        ):
+            raise ValueError("Null values are not accepted in event overlays.")
+        if self.title is not None and not self.title.strip():
+            raise ValueError("Event title must not be empty.")
+        return self
+
+
+ScenarioInterventionType = Literal[
+    "mitigation",
+    "weight_override",
+    "deactivate_dependency",
+    "hypothetical_dependency",
+]
+
+
+class ScenarioInterventionCreate(RequestModel):
+    expected_version: int = Field(ge=1)
+    title: str = Field(min_length=1, max_length=160)
+    action_type: ScenarioInterventionType
+    target_entity_id: UUID | None = None
+    target_dependency_id: UUID | None = None
+    source_entity_id: UUID | None = None
+    mitigation: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    weight: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    relationship_type: str | None = Field(default=None, min_length=1, max_length=60)
+    relationship_label: str | None = Field(default=None, min_length=1, max_length=80)
+    rationale: str = Field(min_length=1, max_length=5000)
+    assumptions: dict[str, object] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_action(self) -> "ScenarioInterventionCreate":
+        if not self.title.strip() or not self.rationale.strip():
+            raise ValueError("Intervention title and rationale must not be empty.")
+        if self.relationship_type is not None and not self.relationship_type.strip():
+            raise ValueError("Relationship type must not be empty.")
+        if self.relationship_label is not None and not self.relationship_label.strip():
+            raise ValueError("Relationship label must not be empty.")
+        action_fields = {
+            "mitigation": self.mitigation,
+            "weight": self.weight,
+            "relationship_type": self.relationship_type,
+            "relationship_label": self.relationship_label,
+            "source_entity_id": self.source_entity_id,
+        }
+        if self.action_type == "mitigation":
+            valid = (
+                self.target_entity_id is not None
+                and self.target_dependency_id is None
+                and self.mitigation is not None
+                and all(
+                    action_fields[field] is None
+                    for field in (
+                        "weight",
+                        "relationship_type",
+                        "relationship_label",
+                        "source_entity_id",
+                    )
+                )
+            )
+        elif self.action_type == "weight_override":
+            valid = (
+                self.target_dependency_id is not None
+                and self.target_entity_id is None
+                and self.weight is not None
+                and self.mitigation is None
+                and self.relationship_type is None
+                and self.relationship_label is None
+                and self.source_entity_id is None
+            )
+        elif self.action_type == "deactivate_dependency":
+            valid = (
+                self.target_dependency_id is not None
+                and self.target_entity_id is None
+                and all(value is None for value in action_fields.values())
+            )
+        else:
+            valid = (
+                self.target_entity_id is not None
+                and self.target_dependency_id is None
+                and self.source_entity_id is not None
+                and self.source_entity_id != self.target_entity_id
+                and self.weight is not None
+                and self.relationship_type is not None
+                and self.relationship_label is not None
+                and self.mitigation is None
+            )
+        if not valid:
+            raise ValueError("Intervention fields do not match the selected action type.")
+        return self
+
+
+class ScenarioAnalysisRunCreate(RequestModel):
+    expected_version: int = Field(ge=1)
+    as_of: UTCDateTime | None = None
+    max_depth: int | None = Field(default=None, ge=1, le=10)
+    min_edge_weight: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    depth_attenuation: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    aggregation: Literal["max", "capped_sum"] | None = None
+    max_paths_per_trigger: int | None = Field(default=None, ge=1, le=10_000)
+    max_nodes_per_run: int | None = Field(default=None, ge=1, le=5_000)
+    include_trigger_entities: bool | None = None
+
+
+class ScenarioResponse(ORMResponse):
+    id: UUID
+    organization_id: UUID
+    name: str
+    description: str | None
+    baseline_run_id: UUID | None
+    status: Literal["draft", "archived"]
+    version: int
+    created_by_user_id: UUID
+    created_at: UTCDateTime
+    updated_at: UTCDateTime
+
+
+class ScenarioEventResponse(BaseModel):
+    event: dict[str, object]
+    triggers: list[dict[str, object]]
+
+
+class ScenarioEntityOverrideResponse(ORMResponse):
+    id: UUID
+    scenario_id: UUID
+    entity_id: UUID
+    exposure: float | None
+    mitigation: float | None
+    status: EntityStatus | None
+    rationale: str | None
+
+
+class ScenarioDependencyOverrideResponse(ORMResponse):
+    id: UUID
+    scenario_id: UUID
+    dependency_id: UUID | None
+    source_entity_id: UUID | None
+    target_entity_id: UUID | None
+    relationship_type: str | None
+    relationship_label: str | None
+    weight: float | None
+    is_active: bool | None
+    review_status: ReviewStatus | None
+    rationale: str | None
+
+
+class ScenarioInterventionResponse(ORMResponse):
+    id: UUID
+    scenario_id: UUID
+    title: str
+    action_type: ScenarioInterventionType
+    target_entity_id: UUID | None
+    target_dependency_id: UUID | None
+    rationale: str
+    assumptions: dict[str, object]
+    author_user_id: UUID
+    created_at: UTCDateTime
+
+
+class ScenarioDetailResponse(ScenarioResponse):
+    event_overlay: ScenarioEventResponse
+    entity_overrides: list[ScenarioEntityOverrideResponse]
+    dependency_overrides: list[ScenarioDependencyOverrideResponse]
+    interventions: list[ScenarioInterventionResponse]
+
+
+class ScenarioComparisonItem(BaseModel):
+    entity_id: UUID
+    entity_name: str
+    change_type: Literal["added", "removed", "changed", "unchanged"]
+    baseline_score: float
+    scenario_score: float
+    delta: float
+
+
+class ScenarioComparisonResponse(BaseModel):
+    scenario_id: UUID
+    baseline_run_id: UUID
+    scenario_run_id: UUID
+    scenario_version: int
+    baseline_status: Literal[
+        "pending",
+        "running",
+        "completed",
+        "completed_with_limits",
+        "incomplete",
+        "failed",
+    ]
+    scenario_status: Literal[
+        "pending",
+        "running",
+        "completed",
+        "completed_with_limits",
+        "incomplete",
+        "failed",
+    ]
+    potentially_incomplete: bool
+    estimated_effect: dict[str, float]
+    assumptions: list[ScenarioInterventionResponse]
+    items: list[ScenarioComparisonItem]
+
+
 AnalysisRunStatus = Literal[
     "pending",
     "running",
@@ -232,6 +471,7 @@ class AnalysisRunResponse(ORMResponse):
     id: UUID
     organization_id: UUID
     event_id: UUID
+    scenario_id: UUID | None
     status: AnalysisRunStatus
     configuration: dict[str, object]
     algorithm_version: str

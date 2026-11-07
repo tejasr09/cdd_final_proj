@@ -39,6 +39,7 @@ test("event to analysis workflow is connected to API responses", async ({
   const run = {
     id: "run-id",
     organization_id: "organization-id",
+    scenario_id: null,
     event_id: event.id,
     status: "completed",
     configuration: { max_depth: 4 },

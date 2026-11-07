@@ -214,7 +214,7 @@ def _persist_output(
                             path_id=path_model.id,
                             sequence_index=sequence_index,
                             entity_id=step.entity_id,
-                            dependency_id=step.dependency_id,
+                            dependency_id=(None if step.is_hypothetical else step.dependency_id),
                         )
                     )
             elif path_key == primary_key:
@@ -344,6 +344,7 @@ def create_analysis_run_for_member(
     run = ImpactRun(
         organization_id=membership.organization_id,
         event_id=event.id,
+        scenario_id=None,
         status="running",
         configuration=prepared.configuration,
         input_snapshot=prepared.input_snapshot,
@@ -425,11 +426,14 @@ def page_analysis_runs_for_member(
     limit: int,
     offset: int,
     event_id: UUID | None = None,
+    scenario_id: UUID | None = None,
 ) -> tuple[list[ImpactRun], int]:
     authorize(membership, Permission.EVENT_READ)
     query = select(ImpactRun).where(ImpactRun.organization_id == membership.organization_id)
     if event_id is not None:
         query = query.where(ImpactRun.event_id == event_id)
+    if scenario_id is not None:
+        query = query.where(ImpactRun.scenario_id == scenario_id)
     total = session.scalar(select(func.count()).select_from(query.subquery())) or 0
     items = list(
         session.scalars(

@@ -23,4 +23,10 @@ Overlay persistence and isolation tests are required. Retention details remain a
 
 ## Evidence
 
-D14 in the continuation brief. Human acceptance is pending.
+D14 in the continuation brief. Implementation evidence is in
+[`backend/app/scenario_service.py`](../../backend/app/scenario_service.py),
+the scenario integration and isolation tests in
+[`backend/tests/test_api.py`](../../backend/tests/test_api.py), and the
+Phase 7 verification record in
+[`docs/reports/phase7-report.md`](../reports/phase7-report.md). Human review
+of the implementation and the retention policy remains pending.
