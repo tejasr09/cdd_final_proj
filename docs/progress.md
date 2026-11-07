@@ -3,7 +3,7 @@
 - Last updated: 2026-11-07
 - Current phase: Phase 4 — API foundation implemented; awaiting human review
 - Current branch: `feature/api-foundation`
-- Current commit: See `git log -1` for the latest local revision on this branch
+- Current commit: Phase 4 implementation `c93eb32`; see `git log -1` for the latest local revision on this branch
 - Overall status: Phase 4 exit criteria are locally verified. Stop here for human review and explicit Phase 5 approval. Phase 2 remains partial; its human-led work may continue in parallel.
 
 ## Done
@@ -100,6 +100,7 @@
 | 2026-11-07 | `uv run --locked pytest` in `backend` | PASS | 22 tests passed, including API, health, tenancy, migration, audit, role and OpenAPI snapshot checks |
 | 2026-11-07 | `uv run --locked ruff check app tests scripts` in `backend` | PASS | All checks passed |
 | 2026-11-07 | `uv run --locked ruff format --check app tests scripts` in `backend` | PASS | All 15 checked Python files already formatted |
+| 2026-11-07 | Commit and worktree check | PASS | Phase 4 implementation committed as `c93eb32` on `feature/api-foundation`; worktree clean |
 | 2026-11-07 | Live PostgreSQL, Docker/Compose, production authentication, secret scan | NOT RUN | Not available or not authorized/in scope for Phase 4; no live/cloud evidence claimed |
 
 ## Decisions and ADRs

@@ -55,6 +55,7 @@ not on the tool-shell PATH.
 | `uv run --locked ruff check app tests scripts` (from `backend`) | PASS | All checks passed |
 | `uv run --locked ruff format --check app tests scripts` (from `backend`) | PASS | 15 files already formatted |
 | OpenAPI snapshot comparison | PASS | Included in the API test suite |
+| Committed revision and worktree check | PASS | Tests ran against the final implementation committed as `c93eb32` on `feature/api-foundation`; worktree was clean |
 | Live PostgreSQL migration/API check | NOT RUN | No live PostgreSQL server was available; this phase made no schema changes |
 | Docker/Compose startup | NOT RUN | Docker daemon unavailable; Compose orchestration is a later phase |
 
