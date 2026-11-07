@@ -4,7 +4,7 @@ Ripple Effect is a decision-support application for exploring how a modeled chan
 
 ## Current status
 
-Phase 1 foundation plus a Phase 2 interactive UX prototype. The prototype uses synthetic data and mock results only; it is not connected to the API, does not implement tenant security or the analysis engine, and is not user-research evidence. Authentication, persistence, production dependency editing, and real analysis remain unimplemented.
+Phase 1 foundation and the Phase 2 synthetic UX prototype are present. Phase 3 adds the SQLAlchemy data model, tenant-scoped service foundations, Alembic migration, and synthetic database seed. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human). The frontend prototype remains separate from the API and its mock results are not analysis output. HTTP CRUD endpoints and the analysis engine are not yet implemented.
 
 The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together.
 
@@ -13,7 +13,7 @@ The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`ag
 - Node.js 24.14.1 or a compatible version supported by Vite.
 - Python 3.11 or newer within the selected support range.
 - npm and uv.
-- Docker Desktop only for the optional local Compose stack. The Docker daemon was unavailable during Phase 1 setup, so Compose has not been run.
+- Docker Desktop for the optional local Compose stack. Docker was unavailable during the latest data-foundation checks; Compose migration wiring remains future work.
 
 If `uv` is not installed, install the pinned tool from PyPI. With a pip `--user` install on Windows, add its Scripts directory to the current PowerShell session:
 
@@ -27,20 +27,26 @@ uv --version
 
 ## Run locally
 
-In PowerShell, from the repository root:
+The following backend walkthrough uses a local SQLite database. SQLite is
+convenient for development and tests; PostgreSQL remains the authoritative
+persistence target.
 
-```powershell
-Copy-Item .env.example .env
-```
-
-Replace the example database password in `.env` before starting Compose. Do not commit `.env`.
-
-In one terminal, start the API:
+In PowerShell, from the repository root, prepare the backend database and
+seed synthetic data:
 
 ```powershell
 Set-Location backend
 uv sync --locked
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+$env:DATABASE_URL = "sqlite:///./ripple_effect.sqlite3"
+uv run --locked alembic upgrade head
+$env:APP_ENV = "development"
+uv run --locked python -m app.seed
+```
+
+In the same terminal, start the API:
+
+```powershell
+uv run --locked uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 In another terminal, start the frontend:
@@ -57,9 +63,18 @@ Open `http://localhost:5173`. API liveness and readiness are available at:
 - `http://127.0.0.1:8000/api/v1/health/ready`
 - `http://127.0.0.1:8000/docs`
 
-The Phase 1 readiness endpoint reports application startup only; database connectivity is not integrated until the data-foundation phase.
+Liveness reports process status; readiness checks database connectivity and
+returns HTTP 503 when the database is unavailable. The local seed is
+deterministic, idempotent and synthetic; it is restricted to development/test
+and local databases. The local-auth adapter is disabled by default and is not
+yet wired to business HTTP endpoints.
 
-The frontend currently opens the synthetic Phase 2 click-through prototype. Its generated graph contains 10,018 synthetic entities and 30,017 synthetic relationships across two demo organizations. Result scores and scenario deltas are illustrative placeholders, not engine output or benchmark results. See [`docs/ux/prototype-readme.md`](./docs/ux/prototype-readme.md) before using or presenting it.
+The frontend currently opens the synthetic Phase 2 click-through prototype.
+Its generated graph contains 10,018 synthetic entities and 30,017 synthetic
+relationships across two demo organizations. Result scores and scenario
+deltas are illustrative placeholders, not engine output or benchmark results.
+See [`docs/ux/prototype-readme.md`](./docs/ux/prototype-readme.md) before using
+or presenting it.
 
 ## Verify
 
@@ -77,19 +92,25 @@ Backend:
 
 ```powershell
 Set-Location backend
-uv run pytest
+uv run --locked pytest
 uv run ruff check app tests
 uv run ruff format --check app tests
+$env:DATABASE_URL = "sqlite:///./ripple_effect.sqlite3"
+uv run --locked alembic check
 ```
 
-Local Compose, if Docker Desktop is running:
+Compose has not yet been updated to run Alembic before the API; that work is
+part of the delivery phase. Do not treat the current Compose stack as a
+reproducible database-backed startup path. When Docker is available, the
+existing configuration can be inspected with:
 
 ```powershell
-Set-Location ..
-docker compose up --build
+docker compose config
 ```
 
-The current API does not yet use the database service. Migrations, database readiness, and seed data are later-phase work.
+PostgreSQL is the authoritative target. The migration and seed commands above
+also work with a local PostgreSQL URL supplied through `DATABASE_URL`; ensure
+it points only to a local development database when seeding.
 
 ## Project guidance
 

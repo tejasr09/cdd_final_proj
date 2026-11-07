@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+
+from app.database import database_is_ready
 
 app = FastAPI(
     title="Ripple Effect API",
@@ -16,5 +19,10 @@ def liveness() -> dict[str, str]:
 
 
 @app.get("/api/v1/health/ready", tags=["health"], summary="Check application readiness")
-def readiness() -> dict[str, str]:
-    return {"status": "ready"}
+def readiness() -> JSONResponse:
+    if not database_is_ready():
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not_ready", "reason": "database_unavailable"},
+        )
+    return JSONResponse(status_code=200, content={"status": "ready"})

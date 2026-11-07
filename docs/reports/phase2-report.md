@@ -1,5 +1,12 @@
 # Phase 2 Report — UX discovery preparation
 
+> Status update: Phase 2 remains partial and its human-led work is still
+> outstanding. The continuation brief permits Phase 2 to run in parallel with
+> Phases 3–5; the human later asked to defer Figma/research and continue
+> functionality, with Phase 3 already explicitly approved. Phase 3 therefore
+> proceeded without treating Phase 2 as complete. See the Phase 3 report for
+> implementation evidence and remaining gaps.
+
 ## 1. Objective
 
 Prepare UX research/design materials and an agent-created interactive click-through using synthetic data, under the human-approved Phase 2 scope. Human interviews, consent, research findings, Figma ownership, and usability validation remain human-led.
@@ -25,7 +32,7 @@ No human-owned Figma file, participant research, findings, or usability evidence
 
 ## 3. Decisions
 
-- The human approved generated synthetic data and explicitly approved Phase 3. The current Phase 2 exit gate still blocks starting Phase 3 until human-led work is completed and reviewed.
+- The human approved generated synthetic data and explicitly approved Phase 3. Phase 2 remains partial; the brief permits Phase 3 to proceed in parallel, and the human later asked to defer the human-led UX work while functionality continues.
 - The React concept is a presentation prototype only; synthetic records and mock impact values are explicitly labeled, not connected to the API or production analysis engine.
 - No new ADR was needed. Existing product and architecture decisions were treated as requirements, not revalidated UX findings.
 - Personas, IA, journeys, and task flows remain explicitly hypotheses/proposals.
@@ -74,8 +81,8 @@ No human-owned Figma file, participant research, findings, or usability evidence
 
 - Deviations from the brief: none within the approved agent-preparation scope.
 - Why they were necessary: not applicable.
-- Approval status: Phase 2 preparation scope and generated synthetic data were approved. Phase 3 was explicitly approved by the human, but its start remains blocked by the Phase 2 exit gate.
-- Blockers and recommended resolution: Phase 2 exit requires human-owned research/findings, a human-owned Figma prototype covering event creation → analysis → impact inspection → scenario → comparison, and usability validation. The React concept is preparatory, not a substitute. Human should complete and submit the actual deliverables for review; do not start Phase 3 before then.
+- Approval status: Phase 2 preparation and generated synthetic data were approved. Phase 3 was explicitly approved and proceeded in parallel as allowed by the continuation brief.
+- Blockers and recommended resolution: Phase 2 remains partial until human-owned research/findings, a human-owned Figma prototype covering event creation → analysis → impact inspection → scenario → comparison, and usability validation are provided. The React concept is preparatory, not a substitute. These human deliverables remain outstanding but do not invalidate or block the separately approved Phase 3 work.
 
 ## 9. Progress file
 
@@ -87,12 +94,12 @@ No human-owned Figma file, participant research, findings, or usability evidence
 2. Conduct suitable, voluntary interviews and retain anonymized evidence in the approved location.
 3. Review the React concept, then create and own the Figma file and clickable prototype for the required end-to-end journey.
 4. Conduct task-based tests and supply actual frames/results for review and evidence-backed synthesis.
-5. Request Phase 2 exit review. Phase 3 approval is recorded, but the phase cannot start until this gate is met.
+5. Request Phase 2 exit review when the human-led deliverables are ready. Phase 2 remains partial while later approved phases may proceed in parallel.
 
 ## 11. Phase exit assessment
 
 - Exit criteria met: PARTIAL.
 - Evidence-backed explanation: preparation documents and a synthetic React click-through are present and distinguish assumptions/mock values from evidence. The required human research, findings/design decisions, human-owned Figma artifact, and usability results have not been supplied.
-- Recommended next phase: finish the human-led Phase 2 work, then request review. The human explicitly approved Phase 3, but do not begin it until Phase 2 exit is reviewed.
+- Recommended next phase: Phase 3 was explicitly approved and may proceed in parallel. Phase 2 remains partial until its human-led exit criteria are reviewed.
 
 STOP HERE. Do not begin the next phase until the human explicitly approves.
