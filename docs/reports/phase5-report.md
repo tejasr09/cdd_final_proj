@@ -62,7 +62,8 @@ is not on the tool-shell PATH.
 
 | Command/check | Result | Evidence |
 |---|---|---|
-| `uv run --locked pytest` (from `backend`) | PASS | 85 tests passed |
+| Phase implementation commit | PASS | `5a5a6db` on `feature/engine-ripple`; the verified code and tests are committed |
+| `uv run --locked pytest` (from `backend`) | PASS | 86 tests passed |
 | `uv run --locked ruff check app tests scripts migrations/versions/c13a4f8d2b71_add_analysis_run_snapshot.py` (from `backend`) | PASS | All checks passed |
 | `uv run --locked ruff format --check app tests scripts migrations/versions/c13a4f8d2b71_add_analysis_run_snapshot.py` (from `backend`) | PASS | 19 files already formatted |
 | Initial `uv run --locked ruff check app tests scripts migrations` (from `backend`) | FAIL | Reported 12 pre-existing lint findings in `b4fceea3f1e2_initial_data_foundation.py`; the historical migration was left unchanged. The final targeted command above passes. |

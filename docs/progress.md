@@ -3,7 +3,7 @@
 - Last updated: 2026-11-07
 - Current phase: Phase 5 — Ripple engine implemented; awaiting human review
 - Current branch: `feature/engine-ripple`
-- Current commit: Phase 5 implementation; see `git log -1` for the latest local revision on this branch
+- Current commit: Phase 5 implementation `5a5a6db`; see `git log -1` for the latest local revision on this branch
 - Overall status: Phase 5 exit criteria are locally verified. Stop here for human review and explicit Phase 6 approval. Phase 2 remains partial; its human-led work may continue in parallel.
 
 ## Done
