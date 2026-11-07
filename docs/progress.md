@@ -1,24 +1,22 @@
 # Ripple Effect — Project Progress
 
 - Last updated: 2026-11-07
-- Current phase: Phase 1 — complete; awaiting phase review
-- Current branch: `feature/phase1-foundation`
-- Current commit: Phase 1 Conventional Commit on this branch (see `git log -1`)
-- Overall status: Phase 1 foundation implemented; Docker runtime verification and one development-tool audit finding remain open
+- Current phase: Phase 2 — agent-preparation deliverables complete; human-led work pending
+- Current branch: `feature/ux-preparation`
+- Current commit: Phase 1 base `87f525a`; Phase 2 handoff commit is recorded in `git log -1`
+- Overall status: Phase 2 UX preparation is documentation-only and partial; no interviews or Figma prototype have been completed
 
 ## Done
 
-- Human confirmed this folder as the intended project root, approved proposed ADRs for Phase 1, and approved Phase 1.
-- Initialized a local Git repository on `feature/phase1-foundation`.
-- Added React/Vite/TypeScript frontend shell and FastAPI liveness/readiness endpoints.
-- Added pinned frontend/backend manifests and lockfiles, formatting/lint/type-check/test configuration, setup instructions, and local container definitions.
-- Added persistent agent instructions and Phase 1 architecture notes that distinguish implemented from planned behavior.
-- Updated ADR-009 through ADR-031 to accepted per human approval.
-- Verified frontend/backend checks, live API health/OpenAPI, frontend rendering, Compose configuration, and dependency audits; details are in `docs/reports/phase1-report.md`.
+- Phase 1 foundation is implemented and reported in `docs/reports/phase1-report.md`; its Docker-runtime and dependency-audit caveats remain open.
+- Human approved Phase 2 agent-preparation scope on branch `feature/ux-preparation`; no Phase 3 work is authorized.
+- Prepared Phase 2 UX documentation in `docs/ux/`: interview guide/consent reminder, anonymized notes template, hypothesis personas, journey-map template, proposed IA and task flows, low-fidelity screen requirements, Figma checklist, and usability-test script.
+- Added `docs/reports/phase2-report.md`, which records scope, verification, limitations, and the partial exit assessment.
 
 ## In progress
 
-- Human review of the Phase 1 report and decision to continue.
+- Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
+- Human-owned Figma prototype and task-based testing; provide screenshots/export and actual results for review and synthesis.
 
 ## Ambiguity register
 
@@ -41,8 +39,8 @@
 
 | Order | Work item | Acceptance criteria |
 |---|---|---|
-| Next, after approval | Phase 2 UX templates/research (human-led; may run in parallel) | Templates distinguish hypotheses from evidence; human conducts interviews/prototype validation |
-| Next, after approval | Phase 3 data and tenancy | Migrations build a fresh database; membership and tenant constraints pass isolation tests; state changes are audited |
+| Next | Complete Phase 2 human-led research and prototype work | Clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
+| Later, after Phase 2 review and explicit approval | Phase 3 data and tenancy | Migrations build a fresh database; membership and tenant constraints pass isolation tests; state changes are audited |
 | Later | Phase 4 API | CRUD/lifecycle/trigger endpoints validate and authorize correctly; pagination, errors, audit and OpenAPI snapshot are tested |
 | Later | Phase 5 engine | Required test matrix passes, 32.256 example reproduced, output deterministic, ceilings visibly mark incomplete runs |
 | Later | Phase 6 frontend | Event-to-analysis journey works; graph direction and accessible list agree; impact explanations are inspectable |
@@ -57,7 +55,8 @@
 - Docker CLI is installed but the Docker daemon is unavailable, so Compose startup and image builds could not be verified.
 - The npm audit reports 10 moderate findings for the development-tool dependency chain through `minimatch` (`>=7.0.0 <11.0.1`). A non-breaking audit fix was unavailable; npm proposed a breaking ESLint downgrade, which was not forced.
 - Production authentication provider remains intentionally undecided; no auth/session behavior is implemented yet.
-- CI workflows, cloud resources, real UX research, and database integration remain future-phase/human work.
+- Human interviews, consent, actual UX findings, Figma prototype, and usability results do not exist yet; Phase 2 is partial until supplied and reviewed.
+- CI workflows, cloud resources, and database integration remain future-phase/human work.
 
 ## Verification
 
@@ -77,6 +76,8 @@
 | 2026-11-07 | npm audit, all frontend dependencies | FAIL | 10 moderate development dependency findings via minimatch; see report |
 | 2026-11-07 | `uv audit --locked` | PASS | OSV lookup: no known vulnerabilities/adverse statuses in 21 packages |
 | 2026-11-07 | Docker daemon and image startup | NOT RUN | Docker Desktop Linux engine pipe unavailable |
+| 2026-11-07 | Phase 2 UX documentation review | PASS | Confirmed requested agent-preparation deliverables are present; docs-only review, no UX validation claimed |
+| 2026-11-07 | UX interviews, Figma prototype, task-based usability testing | NOT RUN | Human-led Phase 2 work; no participants, prototype, or results supplied |
 
 ## Decisions and ADRs
 
@@ -85,6 +86,8 @@
 - npm + uv package manager selection accepted; uv 0.13.7 installed in the user Python tool directory.
 - Detailed phase findings: `docs/reports/phase-0-report.md`.
 - Phase 1 evidence: `docs/reports/phase1-report.md`.
+- Phase 2 agent-preparation scope approved; human-led research and Figma ownership remain with the human.
+- Phase 2 evidence and limitations: `docs/reports/phase2-report.md`.
 
 ## Risk register
 
@@ -100,22 +103,25 @@
 
 ## Human actions pending
 
-- Review `docs/reports/phase1-report.md`; approve Phase 2 or Phase 3 as the next phase.
+- Conduct and document Phase 2 interviews with suitable participants, appropriate consent, anonymized notes, and evidence-backed findings.
+- Create/own the clickable Figma prototype, conduct task-based tests, and provide actual frames/results for review.
+- Review `docs/reports/phase2-report.md` and complete the Phase 2 human deliverables before requesting a phase-exit review.
 - Start Docker Desktop and verify Compose startup when available.
 - Revisit the minimatch development-tool advisory before release.
-- Plan genuine UX interviews/prototype; no research results are claimed.
+- Do not begin Phase 3 until Phase 2 exit is reviewed and explicitly approved.
 
 ## Evidence index
 
 - `docs/reports/phase-0-report.md`
 - `docs/adr/`
 - `docs/viva-notes.md` (all topics currently planned)
-- No code, tests, CI, cloud, UX, or benchmark evidence exists yet.
+- `docs/ux/` contains preparation templates only; no interview, Figma, or usability-test evidence exists.
+- Phase 1 code/test/API evidence is recorded in `docs/reports/phase1-report.md`; no CI, cloud, or benchmark evidence is claimed.
 
 ## Session handoff
 
-- Last completed task: Phase 1 foundation implementation and verification.
-- Exact next task: human review of Phase 1 report and approval of the next phase.
-- Files to read first: both root-level briefs, this file, and `docs/reports/phase1-report.md`.
+- Last completed task: Phase 2 agent-preparation documentation on `feature/ux-preparation`.
+- Exact next task: human-led Phase 2 interviews and clickable-prototype/testing work; then provide the actual materials for review.
+- Files to read first: both root-level briefs, this file, `docs/reports/phase2-report.md`, and the relevant `docs/ux/` templates.
 - Commands to verify: documented frontend/backend checks; `docker compose up --build` after Docker daemon starts.
-- Approval needed: explicit approval to begin the next phase; GitHub Actions, remote operations, and cloud changes retain separate approval gates.
+- Approval needed: Phase 2 human evidence and explicit approval before Phase 3; GitHub Actions, remote operations, and cloud changes retain separate approval gates.
