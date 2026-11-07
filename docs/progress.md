@@ -3,7 +3,7 @@
 - Last updated: 2026-11-07
 - Current phase: Phase 7 — Scenario simulation and comparison implemented; awaiting human review
 - Current branch: `feature/scenario-simulation`
-- Current commit: Phase 7 implementation and report are ready for a local commit; record its hash after commit
+- Current commit: Run `git log -1 --format=%h` for the latest local commit
 - Overall status: Phase 7 exit criteria are locally verified. Stop here for human review and explicit Phase 8 approval. Phase 2 remains partial; its human-led work may continue in parallel.
 
 ## Done
