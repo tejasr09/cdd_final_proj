@@ -1,0 +1,182 @@
+:root {
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  color: #172b3a;
+  background: #f5f8fa;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+.page-shell {
+  width: min(100% - 48px, 1120px);
+  min-height: 100vh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #dce5eb;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand-mark,
+.status-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  color: #fff;
+  background: #176b69;
+}
+
+.phase-label {
+  color: #526a78;
+  font-size: 0.875rem;
+}
+
+.welcome {
+  max-width: 760px;
+  padding: clamp(72px, 12vh, 132px) 0 56px;
+}
+
+.eyebrow {
+  margin: 0 0 20px;
+  color: #176b69;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+}
+
+h1 {
+  max-width: 700px;
+  margin: 0;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+}
+
+.intro {
+  max-width: 620px;
+  margin: 24px 0 0;
+  color: #526a78;
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  line-height: 1.65;
+}
+
+.notice {
+  max-width: 620px;
+  margin-top: 32px;
+  padding: 16px 18px;
+  border-left: 4px solid #176b69;
+  border-radius: 4px 10px 10px 4px;
+  background: #e8f3f1;
+  line-height: 1.55;
+}
+
+.status-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  max-width: 760px;
+  padding: 24px;
+  border: 1px solid #dce5eb;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(23 43 58 / 5%);
+}
+
+.status-icon {
+  flex: 0 0 36px;
+  font-weight: 700;
+}
+
+.status-card h2 {
+  margin: 2px 0 8px;
+  font-size: 1.05rem;
+}
+
+.status-card p {
+  margin: 0;
+  color: #526a78;
+  line-height: 1.6;
+}
+
+.page-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  padding: 36px 0 24px;
+  color: #637985;
+  font-size: 0.8rem;
+}
+
+:focus-visible {
+  outline: 3px solid #176b69;
+  outline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  .page-shell {
+    width: min(100% - 32px, 1120px);
+  }
+
+  .topbar {
+    min-height: 72px;
+  }
+
+  .phase-label {
+    font-size: 0.75rem;
+  }
+
+  .welcome {
+    padding-top: 72px;
+  }
+
+  .eyebrow {
+    line-height: 1.6;
+  }
+
+  .status-card {
+    padding: 18px;
+  }
+
+  .page-footer {
+    flex-direction: column;
+  }
+}
