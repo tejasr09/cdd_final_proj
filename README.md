@@ -4,7 +4,7 @@ Ripple Effect is a decision-support application for exploring how a modeled chan
 
 ## Current status
 
-Phase 1 foundation, the Phase 2 synthetic UX prototype, and Phase 3 data/tenancy foundations are present. Phases 4 and 5 add tenant-authorized REST APIs and a deterministic, bounded ripple-analysis engine with immutable run snapshots, results, paths, audit records, migrations and OpenAPI documentation. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human). The frontend prototype remains separate from the API and its mock results are not analysis output.
+Phase 1 foundation, Phase 3 data/tenancy foundations, Phase 4 APIs, and Phase 5 deterministic analysis are implemented. Phase 6 integrates the React/TypeScript frontend with the tenant-authorized API for event and trigger workflows, entity/dependency management, analysis history, impact explanations, and an accessible React Flow graph with a keyboard-friendly path alternative. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human).
 
 The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together.
 
@@ -79,12 +79,13 @@ Use the analysis routes documented there to run an open seeded event and
 inspect its paginated results and path provenance. Analysis values are
 heuristic estimates, not probabilities or guaranteed predictions.
 
-The frontend currently opens the synthetic Phase 2 click-through prototype.
-Its generated graph contains 10,018 synthetic entities and 30,017 synthetic
-relationships across two demo organizations. Result scores and scenario
-deltas are illustrative placeholders, not engine output or benchmark results.
-See [`docs/ux/prototype-readme.md`](./docs/ux/prototype-readme.md) before using
-or presenting it.
+The frontend connects to the API through Vite's same-origin `/api` proxy by
+default; leave the API base URL blank in the connection form when running the
+local stack above. The local user and organization IDs are printed by the
+synthetic seed command. Local identity headers are development-only, not
+production authentication. The former synthetic click-through prototype is
+documented as historical UX work in
+[`docs/ux/prototype-readme.md`](./docs/ux/prototype-readme.md).
 
 ## Verify
 
@@ -95,8 +96,21 @@ Set-Location frontend
 npm run lint
 npm run typecheck
 npm run format:check
+npm test
 npm run build
 ```
+
+The Playwright workflow test can use an installed browser. With Google Chrome
+installed, run it in PowerShell with:
+
+```powershell
+$env:PLAYWRIGHT_USE_CHROME = "1"
+npm run test:e2e
+Remove-Item Env:PLAYWRIGHT_USE_CHROME
+```
+
+Otherwise, install the Playwright Chromium browser once with
+`npx playwright install chromium`, then run `npm run test:e2e`.
 
 Backend:
 

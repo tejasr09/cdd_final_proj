@@ -1,33 +1,25 @@
-# Synthetic UX prototype
+# Historical synthetic UX prototype
 
 ## Status and scope
 
-This is an agent-created, interactive React concept for exploring the proposed task flow. It is not the human-owned Figma file, a validated design, or the production application. It contains no interview observations or usability results.
+This document records the agent-created, synthetic React concept built during
+Phase 2. Phase 6 replaced the active frontend with an API-connected application;
+the click-through prototype is not currently runnable from `frontend/src/App.tsx`.
+It was not the human-owned Figma file, a validated design, or research evidence.
+It contains no interview observations or usability results.
 
-## Run it
+## Historical click-through scope
 
-From the repository root in PowerShell:
-
-```powershell
-Set-Location frontend
-npm ci
-npm run dev -- --host 127.0.0.1
-```
-
-Open `http://127.0.0.1:5173`.
-
-## Click-through
-
-1. Edit and save the synthetic event.
-2. Search the dependency table and inspect source → target direction.
-3. Select an example impact and review its illustrative path.
-4. Toggle a hypothetical mitigation and compare mock baseline/scenario values.
+The prior concept allowed users to edit a temporary synthetic event, inspect
+sample source → target dependencies, review a mock impact path, and toggle a
+non-persistent hypothetical mitigation. Those controls were not connected to
+the API or analysis engine.
 
 The organization selector switches between the synthetic campus and transport examples. It is presentation-only and does not implement tenant isolation.
 
 ## Synthetic scale sample
 
-The browser generates a deterministic graph in memory:
+The prior browser concept generated a deterministic graph in memory:
 
 - 10,018 entities across two synthetic organizations.
 - 30,017 directed relationships.
