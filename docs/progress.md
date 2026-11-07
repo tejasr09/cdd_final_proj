@@ -1,10 +1,10 @@
 # Ripple Effect — Project Progress
 
 - Last updated: 2026-11-07
-- Current phase: Phase 3 — data foundation and tenancy implemented; exit assessment is partial pending human review
-- Current branch: `feature/data-tenancy`
+- Current phase: Phase 4 — API foundation implemented; awaiting human review
+- Current branch: `feature/api-foundation`
 - Current commit: See `git log -1` for the latest local revision on this branch
-- Overall status: Phase 3 backend foundations are implemented and locally verified. Phase 2 remains partial; its human-led work is deferred and may run in parallel as allowed by the continuation brief.
+- Overall status: Phase 4 exit criteria are locally verified. Stop here for human review and explicit Phase 5 approval. Phase 2 remains partial; its human-led work may continue in parallel.
 
 ## Done
 
@@ -14,12 +14,14 @@
 - Prepared Phase 2 UX documentation in `docs/ux/`: interview guide/consent reminder, anonymized notes template, hypothesis personas, journey-map template, proposed IA and task flows, low-fidelity screen requirements, Figma checklist, and usability-test script.
 - Added an interactive frontend click-through flow for event → dependencies → impact inspection → scenario comparison, backed by two synthetic demo organizations and a deterministic scale sample of 10,018 entities and 30,017 relationships. All displayed analysis values are labeled mock placeholders.
 - Added `docs/ux/prototype-readme.md` and updated `docs/reports/phase2-report.md`, recording scope, verification, limitations, and the partial exit assessment.
+- Phase 4 API foundation is implemented and reported in `docs/reports/phase4-report.md`: tenant-authorized entity, dependency, event and trigger routes; request/response schemas; pagination; concurrency checks; audit logging; consistent error envelopes; and OpenAPI snapshot.
+- Phase 4 API tests cover CRUD/lifecycle, tenant isolation, role permissions, conflicting writes, request/audit IDs, and the generated OpenAPI contract.
 
 ## In progress
 
 - Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
 - Human-owned Figma prototype and task-based testing; review/adapt the React concept, create the Figma artifact, and provide genuine findings/results.
-- Phase 4 is not started; await human review and explicit approval after the Phase 3 report.
+- Human review of `docs/reports/phase4-report.md`; do not begin Phase 5 until explicitly approved.
 
 ## Ambiguity register
 
@@ -30,7 +32,7 @@
 | A-03 | Production identity provider? | Local/test adapter first; production provider undecided | TODO(human) |
 | A-04 | Frontend styling system? | Tailwind proposal, subject to approval | TODO(human) |
 | A-05 | Python/Node lab constraints? | Verify maintained compatible releases; observed Python 3.11.9 and Node 24.14.1 are candidates only | Runtime observed; team constraints TODO(human) |
-| A-06 | Package managers? | npm + uv proposal; uv is unavailable and has not been installed | Resolved: npm + uv approved; uv 0.13.7 installed, Scripts directory not on PATH by default |
+| A-06 | Package managers? | npm + uv proposal | Resolved: npm + uv approved; uv 0.13.7 installed, Scripts directory not on PATH by default |
 | A-07 | Is Azure ACR/ACI available and budget-approved? | Local-first; human-operated cloud runbooks only | TODO(human) |
 | A-08 | Is Docker Hub also required? | ACR remains target; use Docker Hub only if course requires | TODO(human) |
 | A-09 | Which UX participants are available? | Voluntary students/coordinators with consent; hypotheses remain unvalidated | TODO(human) |
@@ -42,9 +44,8 @@
 
 | Order | Work item | Acceptance criteria |
 |---|---|---|
-| Next, after explicit approval | Phase 4 API | CRUD/lifecycle/trigger endpoints validate and authorize correctly; pagination, errors, audit and OpenAPI snapshot are tested |
+| Next, after explicit approval | Phase 5 engine | Required test matrix passes, 32.256 example reproduced, output deterministic, ceilings visibly mark incomplete runs |
 | Parallel human work | Complete Phase 2 research and Figma work | Human-owned clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
-| Later | Phase 5 engine | Required test matrix passes, 32.256 example reproduced, output deterministic, ceilings visibly mark incomplete runs |
 | Later | Phase 6 frontend | Event-to-analysis journey works; graph direction and accessible list agree; impact explanations are inspectable |
 | Later | Phase 7 scenarios | Scenario/baseline comparisons work and isolation tests prove live records unchanged |
 | Later | Phase 8 delivery | Local Compose is reproducible and approved CI checks pass; image/build evidence is genuine |
@@ -56,12 +57,13 @@
 
 - Docker CLI is installed but the Docker daemon is unavailable, so Compose startup and image builds could not be verified.
 - The npm audit reports 10 moderate findings for the development-tool dependency chain through `minimatch` (`>=7.0.0 <11.0.1`). A non-breaking audit fix was unavailable; npm proposed a breaking ESLint downgrade, which was not forced.
-- Production authentication provider remains intentionally undecided. The local/test membership and role adapter exists, but no production auth or business HTTP endpoint integration is implemented.
+- Production authentication provider remains intentionally undecided. The local/test membership and role adapter exists; production authentication is not implemented.
 - Human interviews, consent, actual UX findings, Figma prototype, and usability results do not exist yet; Phase 2 is partial until supplied and reviewed.
 - The React prototype's organization switch is only a local demo control, its data is synthetic, and mock impact/scenario values are not computed by the planned engine.
 - Live PostgreSQL migration execution and Docker-based startup could not be verified. PostgreSQL DDL ordering was checked offline; SQLite migration and tenant-reference behavior were exercised.
-- Business HTTP endpoints and impact analysis are Phase 4/5 work. Compose migration startup wiring remains in Phase 8.
+- The analysis engine remains Phase 5 work; Compose migration startup wiring remains in Phase 8.
 - CI workflows and cloud resources remain future-phase/human work.
+- The root `agent-brief.md` points to `docs/agent-brief.md`, which is absent. Phase 4 requirements were taken from the available root continuation brief; neither brief was rewritten.
 
 ## Verification
 
@@ -94,6 +96,11 @@
 | 2026-11-07 | `uv run --locked ruff format --check app tests migrations/versions/b4fceea3f1e2_initial_data_foundation.py` | PASS | All 12 checked Python files already formatted |
 | 2026-11-07 | Fresh SQLite `alembic upgrade head`, then `alembic check` | PASS | Migration applied; no new schema operations detected |
 | 2026-11-07 | PostgreSQL offline `alembic upgrade --sql head` | PASS | Generated DDL places `fk_scenarios_baseline_run_tenant` after `impact_runs` creation; no live server was contacted |
+| 2026-11-07 | `uv run --locked python -m scripts.export_openapi` in `backend` | PASS | Regenerated `docs/api/openapi.json` from the application |
+| 2026-11-07 | `uv run --locked pytest` in `backend` | PASS | 22 tests passed, including API, health, tenancy, migration, audit, role and OpenAPI snapshot checks |
+| 2026-11-07 | `uv run --locked ruff check app tests scripts` in `backend` | PASS | All checks passed |
+| 2026-11-07 | `uv run --locked ruff format --check app tests scripts` in `backend` | PASS | All 15 checked Python files already formatted |
+| 2026-11-07 | Live PostgreSQL, Docker/Compose, production authentication, secret scan | NOT RUN | Not available or not authorized/in scope for Phase 4; no live/cloud evidence claimed |
 
 ## Decisions and ADRs
 
@@ -104,9 +111,13 @@
 - Phase 1 evidence: `docs/reports/phase1-report.md`.
 - Phase 2 agent-preparation scope approved; human-led research and Figma ownership remain with the human.
 - Human selected generated synthetic data and explicitly approved Phase 3. The continuation brief permits Phase 2 to run in parallel with Phases 3–5; the human later asked to defer Figma/research and continue functionality. Phase 2 remains partial but did not block the approved Phase 3 work.
+- The human explicitly approved Phase 4. Phase 4 changes are isolated on `feature/api-foundation`; stop after this report until Phase 5 is explicitly approved.
+- API updates and lifecycle changes require `expected_updated_at`; supported databases use row locks where available. Database integrity conflicts return the standard 409 error envelope.
+- `httpx==0.28.1` was added to the backend development dependency group for ASGI integration tests; it is not a runtime dependency.
 - PostgreSQL remains the authoritative store; SQLite is used for local development/tests. Live PostgreSQL migration execution was not available.
 - Phase 2 evidence and limitations: `docs/reports/phase2-report.md`.
 - Phase 3 implementation evidence and limitations: `docs/reports/phase3-report.md`.
+- Phase 4 implementation evidence and limitations: `docs/reports/phase4-report.md`.
 
 ## Risk register
 
@@ -124,16 +135,18 @@
 
 - Conduct and document Phase 2 interviews with suitable participants, appropriate consent, anonymized notes, and evidence-backed findings.
 - Create/own the clickable Figma prototype, conduct task-based tests, and provide actual frames/results for review.
-- Review `docs/reports/phase3-report.md` and explicitly approve Phase 4 before implementation proceeds.
+- Review `docs/reports/phase4-report.md` and explicitly approve Phase 5 before implementation proceeds.
 - Complete Phase 2 human research/Figma/usability deliverables when ready; Phase 2 remains partial but may run in parallel with Phases 3–5.
 - Start Docker Desktop and verify Compose startup when available.
 - Revisit the minimatch development-tool advisory before release.
-- Do not begin Phase 4 until explicitly approved after the Phase 3 report.
+- Do not begin Phase 5 until explicitly approved after the Phase 4 report.
 
 ## Evidence index
 
 - `docs/reports/phase-0-report.md`
 - `docs/reports/phase3-report.md`
+- `docs/reports/phase4-report.md`
+- `docs/api/README.md` and `docs/api/openapi.json`
 - `docs/adr/`
 - `docs/viva-notes.md` (data/tenancy topics updated with implemented evidence and limitations)
 - `docs/ux/` contains preparation documents and a synthetic interactive React concept; no interview, human-owned Figma, or usability-test evidence exists.
@@ -141,8 +154,8 @@
 
 ## Session handoff
 
-- Last completed task: Phase 3 data/tenancy implementation on `feature/data-tenancy`; see `docs/reports/phase3-report.md`.
-- Exact next task: human review of Phase 3, then explicit Phase 4 approval. Phase 2 human-led work can proceed in parallel when ready.
+- Last completed task: Phase 4 API foundation on `feature/api-foundation`; see `docs/reports/phase4-report.md`.
+- Exact next task: human review of Phase 4, then explicit Phase 5 approval. Phase 2 human-led work can proceed in parallel when ready.
 - Files to read first: both root-level briefs, this file, `docs/reports/phase3-report.md`, and `docs/architecture/security-and-tenancy.md`.
-- Commands to verify: `uv run --locked pytest`; `uv run --locked ruff check app tests`; `uv run --locked alembic check` against a migrated local database. PostgreSQL/Docker live checks are outstanding.
-- Approval needed: Phase 4 approval. GitHub Actions, remote operations, and cloud changes retain separate approval gates.
+- Commands to verify: `uv run --locked pytest`; `uv run --locked ruff check app tests scripts`; `uv run --locked ruff format --check app tests scripts`. PostgreSQL/Docker live checks are outstanding.
+- Approval needed: Phase 5 approval. GitHub Actions, remote operations, and cloud changes retain separate approval gates.

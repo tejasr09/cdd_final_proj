@@ -4,7 +4,7 @@ Ripple Effect is a decision-support application for exploring how a modeled chan
 
 ## Current status
 
-Phase 1 foundation and the Phase 2 synthetic UX prototype are present. Phase 3 adds the SQLAlchemy data model, tenant-scoped service foundations, Alembic migration, and synthetic database seed. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human). The frontend prototype remains separate from the API and its mock results are not analysis output. HTTP CRUD endpoints and the analysis engine are not yet implemented.
+Phase 1 foundation, the Phase 2 synthetic UX prototype, and Phase 3 data/tenancy foundations are present. Phase 4 adds tenant-authorized entity, dependency, event, and event-trigger API routes with pagination and an OpenAPI snapshot. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human). The frontend prototype remains separate from the API and its mock results are not analysis output; the analysis engine is not yet implemented.
 
 The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together.
 
@@ -41,6 +41,7 @@ $env:DATABASE_URL = "sqlite:///./ripple_effect.sqlite3"
 uv run --locked alembic upgrade head
 $env:APP_ENV = "development"
 uv run --locked python -m app.seed
+$env:ENABLE_LOCAL_AUTH = "true"
 ```
 
 In the same terminal, start the API:
@@ -66,8 +67,14 @@ Open `http://localhost:5173`. API liveness and readiness are available at:
 Liveness reports process status; readiness checks database connectivity and
 returns HTTP 503 when the database is unavailable. The local seed is
 deterministic, idempotent and synthetic; it is restricted to development/test
-and local databases. The local-auth adapter is disabled by default and is not
-yet wired to business HTTP endpoints.
+and local databases. Local API requests use the seed user and organization IDs
+printed by the seed command in the `X-Local-User-ID` and
+`X-Active-Organization-ID` headers. Local authentication is disabled by
+default; enabling it as shown is only for local development/test and is not
+production authentication.
+
+See [`docs/api/README.md`](./docs/api/README.md) for routes, authorization,
+pagination, errors, concurrency checks, and OpenAPI snapshot instructions.
 
 The frontend currently opens the synthetic Phase 2 click-through prototype.
 Its generated graph contains 10,018 synthetic entities and 30,017 synthetic
@@ -93,8 +100,8 @@ Backend:
 ```powershell
 Set-Location backend
 uv run --locked pytest
-uv run ruff check app tests
-uv run ruff format --check app tests
+uv run --locked ruff check app tests scripts
+uv run --locked ruff format --check app tests scripts
 $env:DATABASE_URL = "sqlite:///./ripple_effect.sqlite3"
 uv run --locked alembic check
 ```

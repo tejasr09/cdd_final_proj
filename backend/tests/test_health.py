@@ -4,14 +4,14 @@ from app.main import app, liveness, readiness
 
 
 def test_liveness_endpoint_contract() -> None:
-    route_paths = {route.path for route in app.routes}
+    route_paths = app.openapi()["paths"]
 
     assert "/api/v1/health/live" in route_paths
     assert liveness() == {"status": "alive"}
 
 
 def test_readiness_endpoint_contract_when_database_is_ready(monkeypatch) -> None:
-    route_paths = {route.path for route in app.routes}
+    route_paths = app.openapi()["paths"]
 
     assert "/api/v1/health/ready" in route_paths
     monkeypatch.setattr("app.main.database_is_ready", lambda: True)
