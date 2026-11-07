@@ -15,6 +15,16 @@ The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`ag
 - npm and uv.
 - Docker Desktop only for the optional local Compose stack. The Docker daemon was unavailable during Phase 1 setup, so Compose has not been run.
 
+If `uv` is not installed, install the pinned tool from PyPI. With a pip `--user` install on Windows, add its Scripts directory to the current PowerShell session:
+
+```powershell
+python -m pip install --user uv==0.13.7
+$pythonTag = python -c "import sys; print(f'Python{sys.version_info.major}{sys.version_info.minor}')"
+$uvScripts = Join-Path (python -m site --user-base) "$pythonTag\Scripts"
+$env:PATH = "$uvScripts;$env:PATH"
+uv --version
+```
+
 ## Run locally
 
 In PowerShell, from the repository root:

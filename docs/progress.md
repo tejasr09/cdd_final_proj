@@ -24,17 +24,17 @@
 
 | ID | Open question | Recommended default | Status |
 |---|---|---|---|
-| A-01 | Is this the intended repository root; what is the integration branch? | Treat this folder as a new project root; preserve files; confirm before Git initialization | TODO(human) |
+| A-01 | Is this the intended repository root; what is the integration branch? | Treat this folder as a new project root; preserve files; confirm before Git initialization | Resolved: confirmed; initialized `feature/phase1-foundation` |
 | A-02 | Team size and PR reviewers? | Feature branches and at least one human review per PR; avoid complex Gitflow for a small team | TODO(human) |
 | A-03 | Production identity provider? | Local/test adapter first; production provider undecided | TODO(human) |
 | A-04 | Frontend styling system? | Tailwind proposal, subject to approval | TODO(human) |
-| A-05 | Python/Node lab constraints? | Verify maintained compatible releases; observed Python 3.11.9 and Node 24.14.1 are candidates only | TODO(human) |
-| A-06 | Package managers? | npm + uv proposal; uv is unavailable and has not been installed | TODO(human) |
+| A-05 | Python/Node lab constraints? | Verify maintained compatible releases; observed Python 3.11.9 and Node 24.14.1 are candidates only | Runtime observed; team constraints TODO(human) |
+| A-06 | Package managers? | npm + uv proposal; uv is unavailable and has not been installed | Resolved: npm + uv approved; uv 0.13.7 installed, Scripts directory not on PATH by default |
 | A-07 | Is Azure ACR/ACI available and budget-approved? | Local-first; human-operated cloud runbooks only | TODO(human) |
 | A-08 | Is Docker Hub also required? | ACR remains target; use Docker Hub only if course requires | TODO(human) |
 | A-09 | Which UX participants are available? | Voluntary students/coordinators with consent; hypotheses remain unvalidated | TODO(human) |
-| A-10 | Is real institutional data needed? | Synthetic data only | Default recorded; confirm |
-| A-11 | Should Jenkins/Kubernetes be pursued? | Defer until MUST criteria and ACI milestone are complete | Default recorded; confirm |
+| A-10 | Is real institutional data needed? | Synthetic data only | Accepted default |
+| A-11 | Should Jenkins/Kubernetes be pursued? | Defer until MUST criteria and ACI milestone are complete | Accepted default |
 | A-12 | Course report/presentation format? | Follow official rubric if supplied; otherwise Section 15 | TODO(human) |
 
 ## Next — ordered backlog and acceptance criteria

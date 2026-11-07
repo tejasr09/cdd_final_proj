@@ -10,6 +10,7 @@ Establish a reproducible local skeleton after explicit Phase 1 approval: fronten
 - Added React 19.3.1 / Vite 8.3.6 / TypeScript 6.0.3 web shell, lockfile, strict TypeScript configuration, ESLint, and Prettier.
 - Added FastAPI 0.162.0 / Uvicorn 0.54.0 health API, pytest/Ruff configuration, tests, `pyproject.toml`, and `uv.lock`.
 - Added root and context-specific ignore files, placeholder-only `.env.example`, agent instructions, README setup commands, Dockerfiles, and Docker Compose.
+- Documented how to add the user-level uv Scripts directory to PowerShell PATH; verified the instructions with the installed uv executable.
 - Added Phase 1 architecture views that clearly identify persistence, authentication, analysis, and deployment as planned.
 - Updated progress and viva notes; marked ADRs D9-D30 and ADR-031 accepted per human approval.
 - Tailwind, React Flow, database drivers/ORM, CI, and cloud components were not added.
@@ -83,7 +84,7 @@ Establish a reproducible local skeleton after explicit Phase 1 approval: fronten
 
 ## 9. Progress file
 
-`docs/progress.md` includes done, in progress, next, blockers, verification, decisions/ADRs, risk register, human actions, and handoff. The Phase 1 Conventional Commit is on `feature/phase1-foundation`.
+`docs/progress.md` includes done, in progress, next, blockers, verification, decisions/ADRs, risk register, human actions, and handoff. Phase 1 changes are committed on `feature/phase1-foundation`.
 
 ## 10. Human review required
 
