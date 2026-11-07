@@ -4,7 +4,7 @@ Ripple Effect is a decision-support application for exploring how a modeled chan
 
 ## Current status
 
-Phase 1 foundation: React/Vite frontend and FastAPI health API. Authentication, persistence, dependency editing, ripple analysis, and scenarios are planned for later approved phases and are not implemented yet.
+Phase 1 foundation plus a Phase 2 interactive UX prototype. The prototype uses synthetic data and mock results only; it is not connected to the API, does not implement tenant security or the analysis engine, and is not user-research evidence. Authentication, persistence, production dependency editing, and real analysis remain unimplemented.
 
 The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together.
 
@@ -58,6 +58,8 @@ Open `http://localhost:5173`. API liveness and readiness are available at:
 - `http://127.0.0.1:8000/docs`
 
 The Phase 1 readiness endpoint reports application startup only; database connectivity is not integrated until the data-foundation phase.
+
+The frontend currently opens the synthetic Phase 2 click-through prototype. Its generated graph contains 10,018 synthetic entities and 30,017 synthetic relationships across two demo organizations. Result scores and scenario deltas are illustrative placeholders, not engine output or benchmark results. See [`docs/ux/prototype-readme.md`](./docs/ux/prototype-readme.md) before using or presenting it.
 
 ## Verify
 

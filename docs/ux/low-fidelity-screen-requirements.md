@@ -1,6 +1,6 @@
 # Low-fidelity screen requirements
 
-> **Requirements for a human-created wireframe, not completed screens.** No wireframes or validated visual design are included in this repository yet.
+> **Requirements and review checklist.** An agent-created React click-through concept is available in the frontend, but it is not the human-owned Figma artifact or validated visual design. See [`prototype-readme.md`](./prototype-readme.md). Research and usability validation remain TODO(human).
 
 ## 1. Application shell
 

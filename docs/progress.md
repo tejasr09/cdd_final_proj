@@ -1,22 +1,23 @@
 # Ripple Effect — Project Progress
 
 - Last updated: 2026-11-07
-- Current phase: Phase 2 — agent-preparation deliverables complete; human-led work pending
+- Current phase: Phase 2 — preparation and synthetic click-through prototype complete; human-led work pending
 - Current branch: `feature/ux-preparation`
-- Current commit: Phase 1 base `87f525a`; Phase 2 handoff commit is recorded in `git log -1`
-- Overall status: Phase 2 UX preparation is documentation-only and partial; no interviews or Figma prototype have been completed
+- Current commit: Phase 2 UX prototype commit on this branch (see `git log -1`)
+- Overall status: Phase 2 remains partial; the React concept uses synthetic data/mock results, while interviews, Figma ownership, and usability validation remain outstanding
 
 ## Done
 
 - Phase 1 foundation is implemented and reported in `docs/reports/phase1-report.md`; its Docker-runtime and dependency-audit caveats remain open.
-- Human approved Phase 2 agent-preparation scope on branch `feature/ux-preparation`; no Phase 3 work is authorized.
+- Human approved Phase 2 preparation and later explicitly approved Phase 3; Phase 3 has not started because the Phase 2 exit gate is still unmet.
 - Prepared Phase 2 UX documentation in `docs/ux/`: interview guide/consent reminder, anonymized notes template, hypothesis personas, journey-map template, proposed IA and task flows, low-fidelity screen requirements, Figma checklist, and usability-test script.
-- Added `docs/reports/phase2-report.md`, which records scope, verification, limitations, and the partial exit assessment.
+- Added an interactive frontend click-through flow for event → dependencies → impact inspection → scenario comparison, backed by two synthetic demo organizations and a deterministic scale sample of 10,018 entities and 30,017 relationships. All displayed analysis values are labeled mock placeholders.
+- Added `docs/ux/prototype-readme.md` and updated `docs/reports/phase2-report.md`, recording scope, verification, limitations, and the partial exit assessment.
 
 ## In progress
 
 - Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
-- Human-owned Figma prototype and task-based testing; provide screenshots/export and actual results for review and synthesis.
+- Human-owned Figma prototype and task-based testing; review/adapt the React concept, create the Figma artifact, and provide genuine findings/results.
 
 ## Ambiguity register
 
@@ -39,8 +40,8 @@
 
 | Order | Work item | Acceptance criteria |
 |---|---|---|
-| Next | Complete Phase 2 human-led research and prototype work | Clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
-| Later, after Phase 2 review and explicit approval | Phase 3 data and tenancy | Migrations build a fresh database; membership and tenant constraints pass isolation tests; state changes are audited |
+| Next | Complete Phase 2 human-led research and Figma work | Human-owned clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
+| Later, after Phase 2 exit review | Phase 3 data and tenancy | Migrations build a fresh database; membership and tenant constraints pass isolation tests; state changes are audited |
 | Later | Phase 4 API | CRUD/lifecycle/trigger endpoints validate and authorize correctly; pagination, errors, audit and OpenAPI snapshot are tested |
 | Later | Phase 5 engine | Required test matrix passes, 32.256 example reproduced, output deterministic, ceilings visibly mark incomplete runs |
 | Later | Phase 6 frontend | Event-to-analysis journey works; graph direction and accessible list agree; impact explanations are inspectable |
@@ -56,6 +57,7 @@
 - The npm audit reports 10 moderate findings for the development-tool dependency chain through `minimatch` (`>=7.0.0 <11.0.1`). A non-breaking audit fix was unavailable; npm proposed a breaking ESLint downgrade, which was not forced.
 - Production authentication provider remains intentionally undecided; no auth/session behavior is implemented yet.
 - Human interviews, consent, actual UX findings, Figma prototype, and usability results do not exist yet; Phase 2 is partial until supplied and reviewed.
+- The React prototype's organization switch is only a local demo control, its data is synthetic, and mock impact/scenario values are not computed by the planned engine.
 - CI workflows, cloud resources, and database integration remain future-phase/human work.
 
 ## Verification
@@ -77,7 +79,13 @@
 | 2026-11-07 | `uv audit --locked` | PASS | OSV lookup: no known vulnerabilities/adverse statuses in 21 packages |
 | 2026-11-07 | Docker daemon and image startup | NOT RUN | Docker Desktop Linux engine pipe unavailable |
 | 2026-11-07 | Phase 2 UX documentation review | PASS | Confirmed requested agent-preparation deliverables are present; docs-only review, no UX validation claimed |
-| 2026-11-07 | UX interviews, Figma prototype, task-based usability testing | NOT RUN | Human-led Phase 2 work; no participants, prototype, or results supplied |
+| 2026-11-07 | `npm run build` in `frontend` | PASS | TypeScript project build and Vite production build succeeded with the UX prototype |
+| 2026-11-07 | `npm run lint` in `frontend` | PASS | ESLint clean |
+| 2026-11-07 | `npx prettier --check src\App.tsx src\demoData.ts src\styles.css` in `frontend` | PASS | Changed frontend files formatted |
+| 2026-11-07 | Browser flow: event save → dependency search → impact detail → mitigation comparison | PASS | Verified synthetic campus example, 3 dependency matches, and temporary mock comparison update |
+| 2026-11-07 | Browser flow: transport organization switch | PASS | Verified separate synthetic example, 7 fixture dependencies plus generated data, and local scenario state reset |
+| 2026-11-07 | Browser viewport check at 390px | PASS | Main heading visible; body had no horizontal overflow |
+| 2026-11-07 | UX interviews, human-owned Figma prototype, task-based usability testing | NOT RUN | Human-led Phase 2 work; no participants, Figma file, or results supplied |
 
 ## Decisions and ADRs
 
@@ -87,6 +95,7 @@
 - Detailed phase findings: `docs/reports/phase-0-report.md`.
 - Phase 1 evidence: `docs/reports/phase1-report.md`.
 - Phase 2 agent-preparation scope approved; human-led research and Figma ownership remain with the human.
+- Human selected generated synthetic data and explicitly approved Phase 3. That approval is recorded, but the written Phase 2 exit gate still blocks starting Phase 3 until human-led work is reviewed.
 - Phase 2 evidence and limitations: `docs/reports/phase2-report.md`.
 
 ## Risk register
@@ -105,7 +114,7 @@
 
 - Conduct and document Phase 2 interviews with suitable participants, appropriate consent, anonymized notes, and evidence-backed findings.
 - Create/own the clickable Figma prototype, conduct task-based tests, and provide actual frames/results for review.
-- Review `docs/reports/phase2-report.md` and complete the Phase 2 human deliverables before requesting a phase-exit review.
+- Review `docs/reports/phase2-report.md` and complete the Phase 2 human deliverables before Phase 3 can start; Phase 3 approval is recorded but does not bypass this gate.
 - Start Docker Desktop and verify Compose startup when available.
 - Revisit the minimatch development-tool advisory before release.
 - Do not begin Phase 3 until Phase 2 exit is reviewed and explicitly approved.
@@ -115,13 +124,13 @@
 - `docs/reports/phase-0-report.md`
 - `docs/adr/`
 - `docs/viva-notes.md` (all topics currently planned)
-- `docs/ux/` contains preparation templates only; no interview, Figma, or usability-test evidence exists.
+- `docs/ux/` contains preparation documents and a synthetic interactive React concept; no interview, human-owned Figma, or usability-test evidence exists.
 - Phase 1 code/test/API evidence is recorded in `docs/reports/phase1-report.md`; no CI, cloud, or benchmark evidence is claimed.
 
 ## Session handoff
 
-- Last completed task: Phase 2 agent-preparation documentation on `feature/ux-preparation`.
-- Exact next task: human-led Phase 2 interviews and clickable-prototype/testing work; then provide the actual materials for review.
-- Files to read first: both root-level briefs, this file, `docs/reports/phase2-report.md`, and the relevant `docs/ux/` templates.
+- Last completed task: Phase 2 preparation and synthetic React click-through prototype on `feature/ux-preparation`.
+- Exact next task: human-led Phase 2 interviews and Figma/testing work; then provide actual materials for review.
+- Files to read first: both root-level briefs, this file, `docs/reports/phase2-report.md`, and `docs/ux/prototype-readme.md`.
 - Commands to verify: documented frontend/backend checks; `docker compose up --build` after Docker daemon starts.
-- Approval needed: Phase 2 human evidence and explicit approval before Phase 3; GitHub Actions, remote operations, and cloud changes retain separate approval gates.
+- Approval needed: Phase 3 approval is recorded; Phase 2 human evidence and exit review remain required before Phase 3 starts. GitHub Actions, remote operations, and cloud changes retain separate approval gates.
