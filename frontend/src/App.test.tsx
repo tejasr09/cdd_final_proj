@@ -250,6 +250,16 @@ describe("application workflow", () => {
     expect(
       screen.getByText("No scenarios have been created in this organization."),
     ).toBeVisible();
+    expect(
+      screen.getByRole("button", {
+        name: /01 Events\. Capture disruptions and triggers\./,
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", {
+        name: /04 Scenarios\. Explore isolated what-if changes\./,
+      }),
+    ).toBeVisible();
     expect(mockApi.listScenarios).toHaveBeenCalledOnce();
   });
 

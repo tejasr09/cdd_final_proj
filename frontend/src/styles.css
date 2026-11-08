@@ -940,3 +940,598 @@ td {
     flex-direction: column;
   }
 }
+
+:root {
+  color-scheme: dark;
+  color: #eef0ff;
+  background: #080b19;
+  font-synthesis: none;
+}
+
+html {
+  min-width: 320px;
+  background: #080b19;
+}
+
+body {
+  color: #eef0ff;
+  background:
+    radial-gradient(ellipse at 50% -30%, rgb(64 56 136 / 20%), transparent 58%),
+    #080b19;
+}
+
+body::before,
+body::after {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+}
+
+body::before {
+  background:
+    radial-gradient(
+      circle at 12% 16%,
+      rgb(50 116 210 / 16%),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 88% 38%,
+      rgb(116 74 220 / 15%),
+      transparent 32rem
+    ),
+    radial-gradient(
+      circle at 47% 100%,
+      rgb(39 111 164 / 12%),
+      transparent 30rem
+    );
+}
+
+body::after {
+  opacity: 0.18;
+  background-image:
+    linear-gradient(rgb(166 179 255 / 5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(166 179 255 / 5%) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to bottom, black, transparent 82%);
+}
+
+.ripple-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.topbar {
+  border-color: rgb(167 180 235 / 13%);
+}
+
+.brand {
+  color: #f0f1ff;
+}
+
+.brand-mark {
+  border: 1px solid rgb(187 198 255 / 30%);
+  background: linear-gradient(145deg, #6479e8, #8a58d2);
+  box-shadow: 0 0 24px rgb(112 106 255 / 36%);
+}
+
+.scope-pill,
+.task-deck,
+.content-card,
+.setup-card,
+.scale-card {
+  border-color: rgb(157 170 230 / 15%);
+  color: #edf0ff;
+  background: rgb(16 20 42 / 80%);
+  box-shadow:
+    0 20px 60px rgb(0 0 0 / 24%),
+    0 0 36px rgb(82 82 194 / 7%);
+  backdrop-filter: blur(14px);
+}
+
+.workspace-grid,
+.content-card.full-width,
+.table-scroll {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.content-card.full-width {
+  overflow: hidden;
+}
+
+.scope-pill {
+  color: #bdc5e7;
+  background: rgb(24 29 56 / 82%);
+}
+
+main {
+  position: relative;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: #f0f1ff;
+}
+
+.eyebrow,
+.section-kicker {
+  color: #9daaff;
+}
+
+.intro-copy,
+.section-heading p:not(.section-kicker) {
+  color: #abb4d4;
+}
+
+.scale-label,
+.scale-card span:last-child,
+.table-caption,
+.record-meta,
+.muted-copy,
+.run-meta,
+.pagination-controls,
+.page-footer {
+  color: #98a2c6;
+}
+
+.scale-card strong {
+  color: #f2f2ff;
+}
+
+.integrity-banner,
+.warning-banner {
+  border-color: rgb(174 153 255 / 24%);
+  color: #e5e3ff;
+  background: linear-gradient(110deg, rgb(44 43 90 / 78%), rgb(27 37 71 / 78%));
+  box-shadow: 0 0 32px rgb(111 87 219 / 10%);
+}
+
+.error-banner {
+  border-color: rgb(255 131 154 / 30%);
+  color: #ffd5df;
+  background: rgb(82 30 55 / 78%);
+}
+
+.success-banner {
+  border-color: rgb(93 225 196 / 27%);
+  color: #bcf6e8;
+  background: rgb(19 67 67 / 78%);
+}
+
+.loading-banner {
+  border-color: rgb(118 177 255 / 28%);
+  color: #cde2ff;
+  background: rgb(26 49 83 / 78%);
+}
+
+.task-deck {
+  margin: 24px 0 17px;
+  padding: clamp(16px, 2.4vw, 24px);
+  border: 1px solid rgb(157 170 230 / 15%);
+  border-radius: 20px;
+}
+
+.task-deck-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 17px;
+}
+
+.task-deck-heading .section-kicker {
+  margin-bottom: 6px;
+}
+
+.task-deck-heading h2 {
+  font-size: 1.22rem;
+}
+
+.task-deck-progress {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  margin: 0;
+}
+
+.task-deck-progress span {
+  color: #8994bb;
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+}
+
+.task-deck-progress strong {
+  color: #d9dcff;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.workspace-nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 11px;
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+}
+
+.task-card {
+  position: relative;
+  min-width: 0;
+  min-height: 158px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 15px;
+  overflow: hidden;
+  border: 1px solid rgb(153 168 226 / 16%);
+  border-radius: 14px;
+  color: #dfe3fb;
+  background: linear-gradient(145deg, rgb(25 31 63 / 85%), rgb(18 23 47 / 86%));
+  text-align: left;
+  white-space: normal;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.task-card::after {
+  position: absolute;
+  right: -34px;
+  bottom: -48px;
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(104 116 255 / 19%), transparent 70%);
+  content: "";
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  border-color: rgb(157 170 255 / 42%);
+  box-shadow: 0 10px 24px rgb(3 5 17 / 25%);
+}
+
+.task-card.active {
+  border-color: rgb(139 151 255 / 70%);
+  color: #fff;
+  background: linear-gradient(
+    145deg,
+    rgb(49 61 119 / 96%),
+    rgb(42 39 91 / 96%)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgb(154 165 255 / 12%),
+    0 0 30px rgb(101 93 237 / 19%);
+}
+
+.task-card-topline {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.task-card-number {
+  color: #9daaff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.task-card-arrow {
+  color: #8490c0;
+  font-size: 0.9rem;
+}
+
+.task-card-title {
+  font-size: 1rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.task-card-description {
+  max-width: 23ch;
+  color: #aab4d6;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.task-card-state {
+  margin-top: auto;
+  padding-top: 5px;
+  color: #8d98c0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.task-card.active .task-card-state {
+  color: #c9caff;
+}
+
+.nav-step.active .nav-number {
+  color: #176b69;
+}
+
+.status-pill,
+.event-status {
+  color: #c8fff0;
+  background: rgb(28 93 87 / 68%);
+}
+
+.event-status.draft,
+.event-status.pending,
+.event-status.running {
+  color: #ffe8ad;
+  background: rgb(106 77 25 / 68%);
+}
+
+.event-status.resolved,
+.event-status.archived,
+.event-status.failed {
+  color: #ffd3dc;
+  background: rgb(103 47 67 / 68%);
+}
+
+.event-status.completed_with_limits,
+.event-status.incomplete {
+  color: #ffe5a7;
+  background: rgb(103 75 28 / 72%);
+}
+
+.content-card,
+.setup-card {
+  border-radius: 18px;
+}
+
+.setup-card {
+  background:
+    radial-gradient(circle at 100% 0, rgb(103 85 213 / 13%), transparent 22rem),
+    rgb(16 20 42 / 88%);
+}
+
+.setup-card .integrity-banner {
+  margin: 22px 0;
+}
+
+.form-stack label,
+.setup-form label,
+.trigger-form label,
+.search-field,
+.run-controls label,
+.edit-form label {
+  color: #c4cbe5;
+}
+
+input,
+select,
+textarea {
+  border-color: rgb(150 165 222 / 22%);
+  color: #f1f2ff;
+  background: rgb(9 13 30 / 82%);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #7e89ad;
+}
+
+option {
+  color: #f1f2ff;
+  background: #11162d;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline-color: #9ca8ff;
+}
+
+.primary-button,
+.secondary-button {
+  border-color: rgb(144 155 255 / 47%);
+  border-radius: 10px;
+}
+
+.primary-button {
+  color: #fff;
+  background: linear-gradient(115deg, #586fe0, #8357d1);
+  box-shadow: 0 7px 22px rgb(76 74 195 / 23%);
+}
+
+.primary-button:hover:not(:disabled) {
+  background: linear-gradient(115deg, #6b81ee, #9668e0);
+}
+
+.secondary-button {
+  color: #d9ddff;
+  background: rgb(37 43 78 / 82%);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: rgb(53 59 102 / 92%);
+}
+
+.empty-state {
+  border-color: rgb(151 166 221 / 25%);
+  color: #aab4d5;
+  background: rgb(17 22 44 / 72%);
+}
+
+.record-button {
+  border-color: rgb(151 166 221 / 17%);
+  color: #edf0ff;
+  background: rgb(20 26 52 / 78%);
+}
+
+.record-button.selected,
+.record-button:hover {
+  border-color: rgb(142 154 255 / 57%);
+  background: rgb(42 48 93 / 78%);
+}
+
+.record-meta,
+.trigger-list span,
+.muted-copy {
+  color: #9da8cd;
+}
+
+.trigger-list li,
+.trigger-form,
+.edit-form,
+.analysis-context,
+.detail-panel {
+  border-color: rgb(151 166 221 / 17%);
+  color: #dce1fa;
+  background: rgb(18 24 48 / 77%);
+}
+
+.run-controls {
+  border-color: rgb(151 166 221 / 18%);
+}
+
+.selected-row {
+  background: rgb(53 63 119 / 40%);
+}
+
+th,
+td {
+  border-color: rgb(151 166 221 / 16%);
+}
+
+th {
+  color: #bdc6e4;
+  background: rgb(31 38 72 / 85%);
+}
+
+td {
+  color: #dbe0f6;
+}
+
+.table-link,
+.table-action {
+  color: #aeb8ff;
+}
+
+.danger-action {
+  color: #ff9eae;
+}
+
+.score-summary strong {
+  color: #bdc5ff;
+}
+
+.detail-list dt {
+  color: #9da8cc;
+}
+
+.graph-section {
+  border-color: rgb(151 166 221 / 18%);
+}
+
+.flow-canvas {
+  border-color: rgb(151 166 221 / 20%);
+  background: rgb(10 15 33 / 90%);
+}
+
+.flow-canvas .react-flow__node {
+  border-color: #7888ec;
+  color: #eef0ff;
+  background: #202a53;
+}
+
+.flow-canvas .react-flow__edge-text {
+  fill: #d5dcff;
+}
+
+.flow-canvas .react-flow__controls button {
+  border-color: #414b7b;
+  color: #e7eaff;
+  background: #171e3c;
+  fill: #e7eaff;
+}
+
+.accessible-path li {
+  border-color: rgb(151 166 221 / 20%);
+  background: rgb(20 26 52 / 82%);
+}
+
+.path-role {
+  color: #98a4cb;
+}
+
+.path-edge {
+  color: #b6beff;
+}
+
+.page-footer {
+  border-top: 1px solid rgb(151 166 221 / 12%);
+}
+
+@media (max-width: 760px) {
+  .workspace-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .task-deck-heading {
+    align-items: flex-start;
+  }
+
+  .task-card {
+    min-height: 146px;
+    padding: 12px;
+  }
+
+  .task-card-description {
+    font-size: 0.74rem;
+  }
+
+  .page-footer {
+    border-top: 1px solid rgb(151 166 221 / 12%);
+  }
+}
+
+@media (max-width: 380px) {
+  .workspace-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .task-card {
+    min-height: 124px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

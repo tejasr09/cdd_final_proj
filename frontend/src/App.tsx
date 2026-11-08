@@ -12,15 +12,36 @@ import {
   type ImpactResult,
 } from "./api";
 import ImpactGraph from "./ImpactGraph";
+import RippleBackground from "./RippleBackground";
 import ScenarioWorkspace from "./ScenarioWorkspace";
 
 type WorkspaceSection = "events" | "dependencies" | "analysis" | "scenarios";
 
-const sections: { id: WorkspaceSection; label: string }[] = [
-  { id: "events", label: "Events" },
-  { id: "dependencies", label: "Dependencies" },
-  { id: "analysis", label: "Analysis" },
-  { id: "scenarios", label: "Scenarios" },
+const sections: {
+  id: WorkspaceSection;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "events",
+    label: "Events",
+    description: "Capture disruptions and triggers",
+  },
+  {
+    id: "dependencies",
+    label: "Dependencies",
+    description: "Map the connections around you",
+  },
+  {
+    id: "analysis",
+    label: "Analysis",
+    description: "Trace effects through the network",
+  },
+  {
+    id: "scenarios",
+    label: "Scenarios",
+    description: "Explore isolated what-if changes",
+  },
 ];
 
 const entityTypes: EntityType[] = [
@@ -106,6 +127,7 @@ function App() {
   const selectedRun = runs.find((item) => item.id === selectedRunId);
   const selectedResult = results.find((item) => item.id === selectedResultId);
   const primaryPath = paths.find((item) => item.is_primary) ?? paths[0] ?? null;
+  const activeSectionIndex = sections.findIndex((item) => item.id === section);
   const activeEntities = entities.filter(
     (entity) => entity.status === "active",
   );
@@ -554,6 +576,7 @@ function App() {
 
   return (
     <div className="app-shell">
+      <RippleBackground />
       <header className="topbar">
         <a className="brand" href="/" aria-label="Ripple Effect home">
           <span className="brand-mark" aria-hidden="true">
@@ -687,21 +710,50 @@ function App() {
               </span>
             </div>
 
-            <nav className="workspace-nav" aria-label="Workspace sections">
-              {sections.map((item, index) => (
-                <button
-                  key={item.id}
-                  aria-current={section === item.id ? "page" : undefined}
-                  className={
-                    section === item.id ? "nav-step active" : "nav-step"
-                  }
-                  onClick={() => setSection(item.id)}
-                  type="button"
-                >
-                  <span className="nav-number">{index + 1}</span>
-                  {item.label}
-                </button>
-              ))}
+            <nav className="task-deck" aria-label="Workspace sections">
+              <div className="task-deck-heading">
+                <div>
+                  <p className="section-kicker">MISSION CONTROL</p>
+                  <h2>Workflow deck</h2>
+                </div>
+                <p className="task-deck-progress">
+                  <span>ACTIVE STEP</span>
+                  <strong>
+                    {String(activeSectionIndex + 1).padStart(2, "0")} /{" "}
+                    {String(sections.length).padStart(2, "0")}
+                  </strong>
+                </p>
+              </div>
+              <div className="workspace-nav">
+                {sections.map((item, index) => (
+                  <button
+                    key={item.id}
+                    aria-label={`${String(index + 1).padStart(2, "0")} ${item.label}. ${item.description}. ${section === item.id ? "Current workspace" : "Open step"}`}
+                    aria-current={section === item.id ? "page" : undefined}
+                    className={
+                      section === item.id ? "task-card active" : "task-card"
+                    }
+                    onClick={() => setSection(item.id)}
+                    type="button"
+                  >
+                    <span className="task-card-topline">
+                      <span className="task-card-number">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <span className="task-card-arrow" aria-hidden="true">
+                        ↗
+                      </span>
+                    </span>
+                    <span className="task-card-title">{item.label}</span>
+                    <span className="task-card-description">
+                      {item.description}
+                    </span>
+                    <span className="task-card-state">
+                      {section === item.id ? "Current workspace" : "Open step"}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </nav>
 
             {error && (

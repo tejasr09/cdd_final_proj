@@ -1,6 +1,6 @@
 # Ripple Effect — Project Progress
 
-- Last updated: 2026-11-07
+- Last updated: 2026-11-08
 - Current phase: Phase 7 — Scenario simulation and comparison implemented; awaiting human review
 - Current branch: `feature/scenario-simulation`
 - Current commit: Run `git log -1 --format=%h` for the latest local commit
@@ -21,6 +21,8 @@
 - Phase 6 frontend unit/accessibility tests, lint, formatting, type-check, production build, Playwright journey and a local seeded-API browser journey passed; details and limitations are recorded in the Phase 6 report.
 - Phase 7 implements tenant-scoped, versioned scenario overlays and D15 interventions; scenario runs replay immutable baseline snapshots, persist reproducible inputs, compare entity-level score changes, and never modify live records. Evidence is recorded in `docs/reports/phase7-report.md`.
 - Phase 7 backend scenario isolation/authorization/audit tests, the full backend suite, frontend tests, lint/format/type-check/build, OpenAPI snapshot, and the existing Playwright journey passed. No database migration or runtime dependency was required.
+- Follow-up UI refinement: applied a dark blue-purple ambient theme, a click-reactive canvas ripple that stops rendering when idle, and an expanded accessible workflow task deck. Native scrolling was retained; no animation dependency was added.
+- Verified the visual refresh in-browser, including a painted click ripple that clears after its animation and a 390px mobile viewport with no page-level horizontal overflow.
 
 ## In progress
 
@@ -134,6 +136,10 @@
 | 2026-11-07 | `$env:PLAYWRIGHT_USE_CHROME='1'; npm run test:e2e` in `frontend` | PASS | 1 event-to-analysis browser journey passed |
 | 2026-11-07 | Initial frontend suite under default per-test timeout | FAIL, resolved | Multi-step UI tests exceeded 5 seconds; extended two tests to 10 seconds, and the final full frontend suite passed |
 | 2026-11-07 | Live PostgreSQL, Docker/Compose, dependency scan, secret scan | NOT RUN | Not performed in Phase 7; no migration or runtime dependency was added |
+| 2026-11-08 | `npm test -- --run --pool=forks --maxWorkers=1` in `frontend` | PASS | 12 tests passed across 3 files after task-deck assertions were added |
+| 2026-11-08 | Frontend lint, format, typecheck, production build | PASS | ESLint, Prettier, TypeScript, and Vite production build succeeded after the visual refresh |
+| 2026-11-08 | `$env:PLAYWRIGHT_USE_CHROME='1'; npm run test:e2e` in `frontend` | PASS | 1 browser journey passed |
+| 2026-11-08 | Canvas ripple and mobile layout browser check | PASS | Click rendered 2,156 canvas pixels at 140 ms; canvas cleared after 1.2 s. 390px viewport had no page-level horizontal overflow |
 
 ## Decisions and ADRs
 
