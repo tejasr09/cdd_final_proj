@@ -240,3 +240,5 @@
 - Added an npm override for patched `minimatch` 11.0.1. `npm audit` passes with zero findings, and `npm ls minimatch --all` confirms ESLint and TypeScript ESLint resolve to 11.0.1.
 - The first Trivy setup failed downloading v0.70.0 before scanning. Both image steps now explicitly request v0.74.0. Remote scan results are pending.
 - Frontend lint, format, type-check, 12 tests, production build and audit pass with the updated lockfile. Backend sources are unchanged.
+- The rerun's quality job passed. Trivy installed and scanned the API image, then found fixable Debian OS advisories and unused global pip/setuptools/wheel advisories; its image job stopped before scanning the web image.
+- Updated the API Dockerfile to apply available apt upgrades and remove unused global Python packaging tools after dependency installation. Local Docker Desktop was unavailable for a rebuild; the next pushed CI run will verify the image change and scan.

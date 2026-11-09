@@ -2,6 +2,10 @@ FROM ghcr.io/astral-sh/uv:0.13.7 AS uv
 
 FROM python:3.11-slim
 
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=uv /uv /uvx /bin/
 
 ENV UV_COMPILE_BYTECODE=1 \
@@ -13,6 +17,7 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /app
 COPY pyproject.toml uv.lock alembic.ini ./
 RUN uv sync --frozen --no-dev --no-install-project
+RUN python -m pip uninstall --yes pip setuptools wheel
 
 COPY app ./app
 COPY migrations ./migrations
