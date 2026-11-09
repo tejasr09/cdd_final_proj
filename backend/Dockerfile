@@ -17,7 +17,7 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /app
 COPY pyproject.toml uv.lock alembic.ini ./
 RUN uv sync --frozen --no-dev --no-install-project
-RUN python -m pip uninstall --yes pip setuptools wheel
+RUN /usr/local/bin/python -m pip uninstall --yes pip setuptools wheel
 
 COPY app ./app
 COPY migrations ./migrations
