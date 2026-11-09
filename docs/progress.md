@@ -233,3 +233,10 @@
 - Files to read first: both root-level briefs, this file, `README.md`, and `docs/architecture/container-view.md`.
 - Commands to verify: `docker compose --env-file .env.example config --quiet`; `python backend\scripts\smoke_compose.py`; `uv run --locked pytest`; backend Ruff checks; frontend tests/lint/format/type-check/build. Local Compose/PostgreSQL and browser journey passed; remote CI and scans are outstanding.
 - Approval needed: none for the approved branch push. Review CI results before merge.
+
+## CI follow-up — 2026-11-09
+
+- GitHub CI found 10 moderate `minimatch` issues. `npm audit fix` could not resolve them; the forced ESLint downgrade was discarded because it introduced incompatible tooling peers.
+- Added an npm override for patched `minimatch` 11.0.1. `npm audit` passes with zero findings, and `npm ls minimatch --all` confirms ESLint and TypeScript ESLint resolve to 11.0.1.
+- The first Trivy setup failed downloading v0.70.0 before scanning. Both image steps now explicitly request v0.74.0. Remote scan results are pending.
+- Frontend lint, format, type-check, 12 tests, production build and audit pass with the updated lockfile. Backend sources are unchanged.
