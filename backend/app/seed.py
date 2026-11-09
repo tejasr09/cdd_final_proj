@@ -236,7 +236,9 @@ def main() -> None:
         if campus_user is None or transport_user is None:
             raise RuntimeError("The synthetic seed did not create its demo users.")
         print("Inserted or confirmed synthetic demo records in the local database.")
+        print(f"North Campus Demo organization ID: {_id('org-campus')}")
         print(f"North Campus Demo local user ID: {campus_user.id}")
+        print(f"City Transport Demo organization ID: {_id('org-transport')}")
         print(f"City Transport Demo local user ID: {transport_user.id}")
 
 

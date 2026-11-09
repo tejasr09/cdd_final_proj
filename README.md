@@ -4,7 +4,7 @@ Ripple Effect is a decision-support application for exploring how a modeled chan
 
 ## Current status
 
-Phase 1 foundation, Phase 3 data/tenancy foundations, Phase 4 APIs, and Phase 5 deterministic analysis are implemented. Phase 6 integrates the React/TypeScript frontend with the tenant-authorized API for event and trigger workflows, entity/dependency management, analysis history, impact explanations, and an accessible React Flow graph with a keyboard-friendly path alternative. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human).
+Phases 1 and 3–7 are implemented, including the tenant-authorized API, deterministic analysis, scenario simulation, and the React/TypeScript workflow. Phase 8 is in progress: the local Compose images, PostgreSQL-backed startup, health checks, proxy, and event-to-analysis browser journey have been verified. The approved PR workflow has not run on GitHub, and the existing npm audit findings remain open. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human).
 
 The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together.
 
@@ -13,7 +13,7 @@ The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`ag
 - Node.js 24.14.1 or a compatible version supported by Vite.
 - Python 3.11 or newer within the selected support range.
 - npm and uv.
-- Docker Desktop for the optional local Compose stack. Docker was unavailable during the latest data-foundation checks; Compose migration wiring remains future work.
+- Docker Desktop for the optional local Compose stack. Compose image builds and startup were verified locally on 2026-11-09; GitHub CI has not yet run.
 
 If `uv` is not installed, install the pinned tool from PyPI. With a pip `--user` install on Windows, add its Scripts directory to the current PowerShell session:
 
@@ -126,18 +126,86 @@ $env:DATABASE_URL = "sqlite:///./ripple_effect.sqlite3"
 uv run --locked alembic check
 ```
 
-Compose has not yet been updated to run Alembic before the API; that work is
-part of the delivery phase. Do not treat the current Compose stack as a
-reproducible database-backed startup path. When Docker is available, the
-existing configuration can be inspected with:
+## Run with Docker Compose
+
+The Compose stack is for local development and uses PostgreSQL, the
+migration-aware API image, and a production-built static frontend. It enables
+the local identity adapter and synthetic seed data only inside this local
+Compose configuration. Do not expose this setup as a production identity
+solution.
+
+In PowerShell from the repository root, copy the example and replace its
+database password with a local-only, URL-safe value. `.env` is ignored by Git
+and is not copied into either image:
 
 ```powershell
-docker compose config
+Copy-Item .env.example .env
+notepad .env
+docker compose config --quiet
+docker compose build
+docker compose up -d
+docker compose ps
+python backend\scripts\smoke_compose.py
+```
+
+The API waits for PostgreSQL, applies Alembic migrations, and idempotently seeds
+synthetic demo records before becoming healthy. The web service starts after
+the API readiness check succeeds. PostgreSQL uses a named volume and is not
+published to the host. The API and web ports bind only to `127.0.0.1`.
+
+Open `http://127.0.0.1:5173`; the frontend proxies API calls over the internal
+Compose network. `http://127.0.0.1:8000/docs` exposes the local API docs. To
+find the local demo user and organization IDs, inspect the seed output:
+
+```powershell
+docker compose logs api
+```
+
+Enter the appropriate ID pair into the local connection form. Smoke-test
+success prints:
+
+```text
+PASS API readiness
+PASS web application
+PASS web-to-API proxy
+```
+
+Stop the stack with `docker compose down`; the named local database volume is
+preserved.
+
+Compose builds separate local-only image tags, `ripple-effect-api:local` and
+`ripple-effect-web:local`. For a release, use a version tag and a commit-SHA
+tag for each image; do not use `latest` as the only identifier. After an
+approved registry push, inspect and record each registry-reported digest:
+
+```powershell
+docker buildx imagetools inspect <registry>/<namespace>/ripple-effect-api:<version>
+docker buildx imagetools inspect <registry>/<namespace>/ripple-effect-web:<version>
+```
+
+Use the reported `sha256` digest to promote the same image between
+environments, rather than rebuilding. No registry or release digest has been
+selected or published for this project.
+
+When Docker is available, Compose configuration can also be inspected with:
+
+```powershell
+docker compose --env-file .env.example config --quiet
 ```
 
 PostgreSQL is the authoritative target. The migration and seed commands above
 also work with a local PostgreSQL URL supplied through `DATABASE_URL`; ensure
 it points only to a local development database when seeding.
+
+## Pull-request checks
+
+The approved workflow in `.github/workflows/ci.yml` runs on pull requests and
+pushes to `feature/delivery-build`. It runs frontend and backend quality
+checks, dependency audits, a Compose image build/start, Trivy scans of both
+images, and the Compose smoke test. Actions are pinned to immutable commit
+SHAs, with read-only repository permissions. Its full `npm audit` will expose
+the known moderate development-tool advisories, so CI is not expected to be
+green until those findings are resolved or formally reviewed.
 
 ## Project guidance
 

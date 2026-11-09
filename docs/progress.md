@@ -1,10 +1,10 @@
 # Ripple Effect — Project Progress
 
-- Last updated: 2026-11-08
-- Current phase: Phase 7 — Scenario simulation and comparison implemented; awaiting human review
-- Current branch: `feature/scenario-simulation`
-- Current commit: Run `git log -1 --format=%h` for the latest local commit
-- Overall status: Phase 7 exit criteria are locally verified. Stop here for human review and explicit Phase 8 approval. Phase 2 remains partial; its human-led work may continue in parallel.
+- Last updated: 2026-11-09
+- Current phase: Phase 8 — Docker, Compose and CI in progress
+- Current branch: `feature/delivery-build`
+- Current commit: Phase 8 delivery commit (see `git log -1 --format=%h`)
+- Overall status: Phase 8 is approved. Local images, Compose startup, health checks, smoke checks, and the event-to-analysis browser journey passed. The approved PR workflow has not run on GitHub; CI and the existing npm audit findings remain open. Phase 2 remains partial.
 
 ## Done
 
@@ -23,12 +23,23 @@
 - Phase 7 backend scenario isolation/authorization/audit tests, the full backend suite, frontend tests, lint/format/type-check/build, OpenAPI snapshot, and the existing Playwright journey passed. No database migration or runtime dependency was required.
 - Follow-up UI refinement: applied a dark blue-purple ambient theme, a click-reactive canvas ripple that stops rendering when idle, and an expanded accessible workflow task deck. Native scrolling was retained; no animation dependency was added.
 - Verified the visual refresh in-browser, including a painted click ripple that clears after its animation and a 390px mobile viewport with no page-level horizontal overflow.
+- Phase 8 approved; work is isolated on `feature/delivery-build`.
+- Replaced the development-server frontend image with a multi-stage static build served by unprivileged Nginx; added API proxying, SPA routing and health checks.
+- Reworked the API image to install locked runtime dependencies as a non-root user and run migrations plus optional synthetic seeding before Uvicorn.
+- Reworked Compose for PostgreSQL/API/web health ordering, a named database volume, loopback-only host ports, and local-only auth and seed configuration.
+- Added a Compose smoke script, safe local example environment, seed output for both demo organizations, and local Compose/image-tag documentation.
+- `docker compose --env-file .env.example config --quiet` passed. The live smoke script passed against the local SQLite API and Vite proxy; it did not exercise Compose or Nginx.
+- After separate approval, added a workflow for frontend/backend checks, migration validation, dependency audits, Compose startup/smoke, and Trivy scans. It runs on pull requests and pushes to `feature/delivery-build`; all direct actions are pinned to commit SHAs.
+- Started Docker Desktop Linux engine 29.8.2 and built both local images. PostgreSQL, API, and Nginx became healthy under isolated Compose project `ripple-phase8-check`.
+- Resolved the first container startup failure: Windows CRLF line endings caused `set -eu` to fail in `/bin/sh`. Added `.gitattributes` to keep shell scripts LF-normalized and rebuilt successfully.
+- The Compose smoke script, a live PostgreSQL-backed event → trigger → open → analysis API journey, and a real-browser event-to-analysis journey through Nginx all passed. API and web containers were verified non-root.
+- Removed only the isolated test project's containers, network, and temporary PostgreSQL volume; Docker Desktop remains running and the two `:local` images remain built.
 
 ## In progress
 
 - Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
 - Human-owned Figma prototype and task-based testing; review/adapt the React concept, create the Figma artifact, and provide genuine findings/results.
-- Human review of `docs/reports/phase7-report.md`; do not begin Phase 8 until explicitly approved.
+- Push `feature/delivery-build` to the approved repository and review the resulting GitHub CI, npm audit and Trivy findings.
 
 ## Ambiguity register
 
@@ -51,24 +62,23 @@
 
 | Order | Work item | Acceptance criteria |
 |---|---|---|
-| Next, after explicit approval | Phase 8 delivery | Local Compose is reproducible and approved CI checks pass; image/build evidence is genuine |
+| In progress | Phase 8 delivery | Local Compose is reproducible and approved CI checks pass; image/build evidence is genuine |
 | Parallel human work | Complete Phase 2 research and Figma work | Human-owned clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
-| Later | Phase 7 human review | Review scenario isolation, authorization, comparison semantics, API contract and Phase 7 report |
 | Later | Phase 9 cloud | Human-approved ACR/ACI deployment uses recorded immutable digest; health, rollback and cleanup are verified |
 | Later | Phase 11 release hardening | Security, tests, accessibility, docs and evidence are reviewed; unmet criteria/limitations are explicit |
 | Optional | Phase 10 Jenkins/Kubernetes | Only after baseline and explicit approval; optional work does not delay required delivery |
 
 ## Blockers
 
-- Docker CLI is installed but the Docker daemon is unavailable, so Compose startup and image builds could not be verified.
-- The npm audit reports 10 moderate findings for the development-tool dependency chain through `minimatch` (`>=7.0.0 <11.0.1`). A non-breaking audit fix was unavailable; npm proposed a breaking ESLint downgrade, which was not forced.
+- The PR workflow was approved and added locally, but has not run; remote push/PR approval is still required to trigger CI.
+- The npm audit reports 10 moderate findings for the development-tool dependency chain through `minimatch` (`>=7.0.0 <11.0.1`). The new full `npm audit` CI step is expected to fail until these are resolved; a non-breaking audit fix was unavailable and npm proposed a breaking ESLint downgrade, which was not forced.
 - Production authentication provider remains intentionally undecided. The local/test membership and role adapter exists; production authentication is not implemented.
 - Human interviews, consent, actual UX findings, Figma prototype, and usability results do not exist yet; Phase 2 is partial until supplied and reviewed.
 - The former synthetic click-through remains documented as historical; the active frontend uses API data. Phase 2 interview, Figma and usability evidence remains absent.
-- Live PostgreSQL migration execution and Docker-based startup could not be verified. PostgreSQL DDL ordering was checked offline; SQLite migration and tenant-reference behavior were exercised.
-- Analysis execution is synchronous; PostgreSQL concurrent-insert snapshot consistency has not been stress-tested. Compose migration startup wiring remains in Phase 8.
-- Scenario behavior is verified with SQLite API tests; live PostgreSQL concurrent scenario updates and Docker/Compose execution remain unverified.
-- CI workflows and cloud resources remain future-phase/human work.
+- A fresh PostgreSQL Compose database was migrated and seeded during Phase 8 startup. Production PostgreSQL and concurrent tenant/scenario behavior remain unverified.
+- Analysis execution is synchronous; PostgreSQL concurrent-insert snapshot consistency has not been stress-tested.
+- Scenario behavior is verified with SQLite API tests; live PostgreSQL concurrent scenario updates remain unverified.
+- Cloud resources remain future-phase/human work. GitHub CI remains unverified until a remote push/PR is approved.
 - The root `agent-brief.md` points to `docs/agent-brief.md`, which is absent. Phase 4 requirements were taken from the available root continuation brief; neither brief was rewritten.
 
 ## Verification
@@ -140,6 +150,25 @@
 | 2026-11-08 | Frontend lint, format, typecheck, production build | PASS | ESLint, Prettier, TypeScript, and Vite production build succeeded after the visual refresh |
 | 2026-11-08 | `$env:PLAYWRIGHT_USE_CHROME='1'; npm run test:e2e` in `frontend` | PASS | 1 browser journey passed |
 | 2026-11-08 | Canvas ripple and mobile layout browser check | PASS | Click rendered 2,156 canvas pixels at 140 ms; canvas cleared after 1.2 s. 390px viewport had no page-level horizontal overflow |
+| 2026-11-08 | `docker compose --env-file .env.example config --quiet` | PASS | Compose configuration parsed; service list was db, api, web |
+| 2026-11-08 | `python backend\scripts\smoke_compose.py` | PASS | API readiness, Vite-served app and Vite-to-API proxy passed with local SQLite; Compose/Nginx/PostgreSQL were not exercised |
+| 2026-11-08 | `backend\.venv\Scripts\python.exe -m pytest` | PASS | 88 backend tests passed |
+| 2026-11-08 | Backend Ruff check and format check | PASS | `app`, `tests`, and `scripts` clean; 20 files formatted |
+| 2026-11-08 | Frontend tests, lint, format, type-check and production build | PASS | 12 tests passed; all other listed checks succeeded |
+| 2026-11-08 | Local SQLite `alembic check` | PASS | No new upgrade operations detected |
+| 2026-11-08 | Docker image build and Compose container startup | NOT RUN | Docker Desktop Linux engine unavailable at that time |
+| 2026-11-08 | Docker engine retry after availability confirmation | FAIL | Context is `desktop-linux`, but the Docker API pipe is absent; no engine process was detected |
+| 2026-11-08 | `.github/workflows/ci.yml` | ADDED | Approved locally with SHA-pinned actions, least-privilege permissions, checks, audits, Compose build/smoke and Trivy scans |
+| 2026-11-08 | GitHub Actions CI run | NOT RUN | No remote push/PR had been approved yet; the full npm audit is expected to expose the existing moderate findings |
+| 2026-11-09 | Docker Desktop engine | PASS | Started Docker Desktop; Linux engine version 29.8.2 became available |
+| 2026-11-09 | `docker compose --project-name ripple-phase8-check --env-file .env.example up --build --detach --wait --wait-timeout 240` | PASS | Built both images; PostgreSQL, API, and Nginx all reached healthy state |
+| 2026-11-09 | First isolated Compose startup | FAIL, resolved | CRLF line endings in `backend/docker-entrypoint.sh` made `/bin/sh` reject `set -eu`; normalized to LF and added `.gitattributes` rule |
+| 2026-11-09 | `python backend\scripts\smoke_compose.py` against Compose | PASS | API readiness, Nginx web response, and Nginx-to-API proxy passed |
+| 2026-11-09 | Compose API event-to-analysis journey | PASS | Created synthetic event, attached trigger, opened event, completed analysis; 8 results returned |
+| 2026-11-09 | Chrome browser journey through Compose | PASS | Connected via Nginx, created event, added trigger, opened it, ran analysis; no page errors |
+| 2026-11-09 | Container user/health inspection | PASS | API `appuser` and web `nginx` users; API, web and PostgreSQL healthy |
+| 2026-11-09 | Isolated Compose cleanup | PASS | Removed test containers/network and only its temporary PostgreSQL volume; local image tags retained |
+| 2026-11-09 | Workflow branch-push trigger | ADDED | User approved CI on pushes to `feature/delivery-build` as well as pull requests |
 
 ## Decisions and ADRs
 
@@ -153,10 +182,10 @@
 - The human explicitly approved Phase 4. Phase 4 changes are isolated on `feature/api-foundation`; stop after this report until Phase 5 is explicitly approved.
 - The human explicitly approved Phase 5 and NetworkX. Phase 5 changes are isolated on `feature/engine-ripple`; stop after this report until Phase 6 is explicitly approved.
 - The human explicitly approved Phase 6 and selected React Flow, approving `@xyflow/react` as the UI runtime dependency. Phase 6 changes are isolated on `feature/frontend-integration`; stop after this report until Phase 7 is explicitly approved.
-- The human explicitly approved Phase 7. Phase 7 work is isolated on `feature/scenario-simulation`; stop after this report until Phase 8 is explicitly approved.
+- The human explicitly approved Phase 7 and subsequently approved Phase 8. Phase 7 changes remain on `feature/scenario-simulation`; Phase 8 work is isolated on `feature/delivery-build`. Stop after the Phase 8 report.
 - API updates and lifecycle changes require `expected_updated_at`; supported databases use row locks where available. Database integrity conflicts return the standard 409 error envelope.
 - `httpx==0.28.1` was added to the backend development dependency group for ASGI integration tests; it is not a runtime dependency.
-- PostgreSQL remains the authoritative store; SQLite is used for local development/tests. Live PostgreSQL migration execution was not available.
+- PostgreSQL remains the authoritative store; SQLite is used for local development/tests. Phase 8 verified migration and seed startup against a local Compose PostgreSQL service, not a production deployment.
 - Phase 2 evidence and limitations: `docs/reports/phase2-report.md`.
 - Phase 3 implementation evidence and limitations: `docs/reports/phase3-report.md`.
 - Phase 4 implementation evidence and limitations: `docs/reports/phase4-report.md`.
@@ -169,7 +198,7 @@
 | Risk | Impact | Mitigation | Owner/status |
 |---|---|---|---|
 | Development dependency audit finding | Moderate glob-matching DoS advisory in tooling chain | No semver-compatible fix currently available; retain visible finding, re-audit before release, do not force downgrade | Engineering, open |
-| Docker daemon unavailable | Container build/start acceptance cannot be verified locally | Start Docker Desktop and run documented Compose commands before approving delivery phase | TODO(human), open |
+| Docker verification | Local Compose build/start acceptance | Docker Desktop 29.8.2 started; images, health, proxy and primary journey verified locally | Engineering, verified |
 | Production auth provider undecided | Cannot configure production identity safely | Keep adapter boundary; select provider and deployment config with human approval | TODO(human), planned |
 | Azure subscription/cost/registry needs unknown | Deployment plan may be unusable or incur cost | Human confirms availability and budget; no cloud actions by agent | TODO(human), open |
 | UX evidence unavailable | Design could be mistaken for validated research | Keep personas as hypotheses and mark research TODO(human) | Team, open |
@@ -180,11 +209,8 @@
 
 - Conduct and document Phase 2 interviews with suitable participants, appropriate consent, anonymized notes, and evidence-backed findings.
 - Create/own the clickable Figma prototype, conduct task-based tests, and provide actual frames/results for review.
-- Review `docs/reports/phase7-report.md`, including scenario isolation and comparison behavior, and explicitly approve Phase 8 before implementation proceeds.
-- Complete Phase 2 human research/Figma/usability deliverables when ready; Phase 2 remains partial but may run in parallel with Phases 3–5.
-- Start Docker Desktop and verify Compose startup when available.
+- Complete Phase 2 human research/Figma/usability deliverables when ready; Phase 2 remains partial.
 - Revisit the minimatch development-tool advisory before release.
-- Do not begin Phase 8 until explicitly approved after the Phase 7 report.
 
 ## Evidence index
 
@@ -192,16 +218,18 @@
 - `docs/reports/phase3-report.md`
 - `docs/reports/phase4-report.md`, `docs/reports/phase5-report.md`, and `docs/reports/phase6-report.md`
 - `docs/reports/phase7-report.md`
+- `docs/reports/phase8-report.md` (partial exit assessment; remote CI and scans remain unverified)
 - `docs/api/README.md` and `docs/api/openapi.json`
 - `docs/adr/`
-- `docs/viva-notes.md` (data/tenancy and frontend topics updated with implemented evidence and limitations)
+- `.github/workflows/ci.yml` (approved PR validation workflow; no remote run evidence)
+- `docs/viva-notes.md` (implementation status and evidence updated through Phase 8 work)
 - `docs/ux/` contains Phase 2 preparation documents and the historical synthetic React concept; no interview, human-owned Figma, or usability-test evidence exists.
 - Phase 1 code/test/API evidence is recorded in `docs/reports/phase1-report.md`; no CI, cloud, or benchmark evidence is claimed.
 
 ## Session handoff
 
-- Last completed task: Phase 7 scenario simulation on `feature/scenario-simulation`; see `docs/reports/phase7-report.md`.
-- Exact next task: human review of Phase 7, then explicit Phase 8 approval. Phase 2 human-led work can proceed in parallel when ready.
-- Files to read first: both root-level briefs, this file, `docs/reports/phase3-report.md`, and `docs/architecture/security-and-tenancy.md`.
-- Commands to verify: `uv run --locked pytest`; `uv run --locked ruff check app tests scripts`; `uv run --locked ruff format --check app tests scripts`; `uv run --locked alembic check`. PostgreSQL/Docker live checks are outstanding.
-- Approval needed: Phase 8 approval. Phase 2 evidence, GitHub Actions, remote operations, and cloud changes retain separate approval gates.
+- Last completed task: Phase 8 local Compose build/start/smoke and browser journey on `feature/delivery-build`.
+- Exact next task: inspect the GitHub Actions run for `feature/delivery-build` and review npm audit and image scan findings. Phase 2 human-led work can proceed when ready.
+- Files to read first: both root-level briefs, this file, `README.md`, and `docs/architecture/container-view.md`.
+- Commands to verify: `docker compose --env-file .env.example config --quiet`; `python backend\scripts\smoke_compose.py`; `uv run --locked pytest`; backend Ruff checks; frontend tests/lint/format/type-check/build. Local Compose/PostgreSQL and browser journey passed; remote CI and scans are outstanding.
+- Approval needed: none for the approved branch push. Review CI results before merge.
