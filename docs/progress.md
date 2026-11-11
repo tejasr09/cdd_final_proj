@@ -1,10 +1,10 @@
 # Ripple Effect — Project Progress
 
 - Last updated: 2026-11-11
-- Current phase: Phase 8 — verification complete; awaiting human review
+- Current phase: Phase 8 — complete; closure approved 2026-11-11
 - Current branch: `feature/delivery-build`
 - Current commit: see `git log -1 --format=%h`
-- Overall status: Phase 8 is approved and its exit criteria are met. The pinned Alpine API image passes local full-severity Trivy vulnerability and secret scans; Compose migration, seed, health, smoke, and event-to-analysis checks pass. GitHub run 43055479057 passed every gate. Await explicit human review before starting Phase 9; Phase 2 remains partial.
+- Overall status: Phase 8 exit criteria are met and closure was explicitly approved on 2026-11-11. The pinned Alpine API image passes local full-severity Trivy vulnerability and secret scans; Compose migration, seed, health, smoke, and event-to-analysis checks pass. GitHub run 43055479057 passed every gate. Phase 9 has not started and requires separate approval; Phase 2 remains partial.
 
 ## Done
 
@@ -46,11 +46,9 @@
 
 - Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
 - Human-owned Figma prototype and task-based testing; review/adapt the React concept, create the Figma artifact, and provide genuine findings/results.
-- Complete Phase 8 human review and explicitly approve closure before Phase 9.
-
 ## Next
 
-- Review the Phase 8 exit assessment and explicitly approve closure; Phase 9 is not authorized by this work.
+- Await separate explicit approval before starting Phase 9; do not begin cloud work.
 
 ## Ambiguity register
 
@@ -73,7 +71,7 @@
 
 | Order | Work item | Acceptance criteria |
 |---|---|---|
-| Awaiting review | Phase 8 delivery | Local Compose is reproducible and approved CI checks pass; image/build evidence is genuine; human closure approval is pending |
+| Done | Phase 8 delivery | Local Compose is reproducible, approved CI checks pass, evidence is genuine, and human closure approval was given 2026-11-11 |
 | Parallel human work | Complete Phase 2 research and Figma work | Human-owned clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
 | Later | Phase 9 cloud | Human-approved ACR/ACI deployment uses recorded immutable digest; health, rollback and cleanup are verified |
 | Later | Phase 11 release hardening | Security, tests, accessibility, docs and evidence are reviewed; unmet criteria/limitations are explicit |
@@ -82,7 +80,7 @@
 ## Blockers
 
 - No Phase 8 technical blocker remains. GitHub run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) on `cbfb812` passed quality, both full-severity image scans, Compose startup, smoke, and cleanup.
-- Human review and explicit Phase 8 closure approval remain required before Phase 9.
+- Phase 8 closure is approved. Separate human approval is still required before Phase 9.
 - `npm audit` and `uv audit --locked` passed in the green CI quality job.
 - Production authentication provider remains intentionally undecided. The local/test membership and role adapter exists; production authentication is not implemented.
 - Human interviews, consent, actual UX findings, Figma prototype, and usability results do not exist yet; Phase 2 is partial until supplied and reviewed.
@@ -240,7 +238,7 @@
 - Conduct and document Phase 2 interviews with suitable participants, appropriate consent, anonymized notes, and evidence-backed findings.
 - Create/own the clickable Figma prototype, conduct task-based tests, and provide actual frames/results for review.
 - Complete Phase 2 human research/Figma/usability deliverables when ready; Phase 2 remains partial.
-- Review the Phase 8 report and explicitly approve closure before Phase 9.
+- Phase 8 closure approved 2026-11-11; Phase 9 remains unapproved and unstarted.
 
 ## Evidence index
 
@@ -259,11 +257,11 @@
 ## Session handoff
 
 - Last completed task: replaced the API Debian base with the pinned Python Alpine image, verified zero-finding local scans and Compose journeys, and passed GitHub run 43055479057 on `feature/delivery-build`.
-- Exact next task: human review and explicit closure approval for the Phase 8 exit report. Do not start Phase 9 without approval.
+- Exact next task: wait for explicit Phase 9 approval. Do not begin Phase 9 or cloud work before it.
 - Files to read first: both root-level briefs, this file, `README.md`, and `docs/architecture/container-view.md`.
 - Phase 8 implementation verification run: [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) on `cbfb812`. Quality, dependency audits, API/web scans, Compose startup, smoke and cleanup passed.
 - Documentation follow-up run: [43056748402](https://github.com/tejasr09/cdd_final_proj/actions/runs/43056748402) on `f5bf230`; the refreshed report and progress documentation also passed CI.
-- Approval needed: review and explicitly close Phase 8 before any Phase 9 work. Do not merge or deploy.
+- Approval needed: separate authorization before Phase 9. Do not merge or deploy.
 
 ## CI follow-up — 2026-11-11
 

@@ -4,7 +4,7 @@ Ripple Effect is a decision-support application for exploring how a modeled chan
 
 ## Current status
 
-Phases 1 and 3–7 are implemented, including the tenant-authorized API, deterministic analysis, scenario simulation, and the React/TypeScript workflow. Phase 8 verification is complete: the pinned Python Alpine API image passes local full-severity Trivy scans; Compose migration, seed, health, proxy, smoke, and event-to-analysis checks pass. GitHub CI run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) passed all checks. Phase 8 awaits human review before Phase 9. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human).
+Phases 1 and 3–7 are implemented, including the tenant-authorized API, deterministic analysis, scenario simulation, and the React/TypeScript workflow. Phase 8 is complete and its closure was approved on 2026-11-11: the pinned Python Alpine API image passes local full-severity Trivy scans; Compose migration, seed, health, proxy, smoke, and event-to-analysis checks pass. GitHub CI run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) passed all checks. Phase 9 has not started and requires separate approval. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human).
 
 The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together.
 

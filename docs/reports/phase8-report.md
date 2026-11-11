@@ -13,8 +13,8 @@ Compose stack, smoke checks, and approved pull-request CI. Phase 8 was approved
 by the human. Local Compose acceptance and GitHub CI are verified. The Debian
 API base had OS advisories with no available fixes; a digest-pinned official
 Python 3.11 Alpine base resolved the scan without suppressions or severity
-changes. All Phase 8 exit criteria are met. Phase 9 is not started and remains
-blocked on explicit human approval after this report.
+changes. All Phase 8 exit criteria are met. Phase 8 closure was explicitly
+approved on 2026-11-11. Phase 9 is not started and requires separate approval.
 
 ## 2. Work completed
 
@@ -185,7 +185,8 @@ verification results, blockers, approvals, and the next actions.
 
 ## 10. Human review required
 
-1. Review this Phase 8 report and explicitly approve closure before Phase 9.
+1. Phase 8 closure was approved on 2026-11-11. No further Phase 8 review is
+   pending.
 2. Keep the pre-existing untracked local demo database out of commits.
 
 ## 11. Phase exit assessment
@@ -196,5 +197,5 @@ verification results, blockers, approvals, and the next actions.
   analysis journey passed. Trivy 0.74.0 found zero vulnerabilities and zero
   secrets in both images. GitHub Actions run 43055479057 passed quality,
   dependency audits, both image scans, Compose startup, smoke, and cleanup.
-- Recommended next: human review and explicit Phase 8 closure approval. Do not
-  start Phase 9 before that approval.
+- Recommended next: stop. Do not start Phase 9 without separate explicit
+  approval.
