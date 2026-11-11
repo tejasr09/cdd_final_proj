@@ -2,9 +2,9 @@
 
 Date: 2026-11-11
 Branch: `feature/delivery-build`
-Base commit: `4580fe9`; latest GitHub run reviewed here is
-[43050682639](https://github.com/tejasr09/cdd_final_proj/actions/runs/43050682639)
-for commit `5186ab7`.
+Base commit: `4580fe9`; latest completed GitHub run reviewed here is
+[43051236619](https://github.com/tejasr09/cdd_final_proj/actions/runs/43051236619)
+for commit `6bc7306`.
 
 ## 1. Objective
 
@@ -87,14 +87,15 @@ Exit criteria remain partial; Phase 9 is not started.
 | Docker engine on 2026-11-11 | PASS | Docker Desktop Linux engine version `29.9.2`. |
 | GitHub Actions run [42640812502](https://github.com/tejasr09/cdd_final_proj/actions/runs/42640812502), commit `3e6926d` | PARTIAL | Quality job passed. Compose build/start passed; `Scan API image` failed, so web scan and smoke step were skipped by the earlier conditions. |
 | GitHub Actions run [43050682639](https://github.com/tejasr09/cdd_final_proj/actions/runs/43050682639), commit `5186ab7` | PARTIAL | Quality passed; API image scan failed; web image scan and Compose smoke both passed. |
+| GitHub Actions run [43051236619](https://github.com/tejasr09/cdd_final_proj/actions/runs/43051236619), docs-only commit `6bc7306` | PARTIAL | Repeated the result: quality passed; API image scan failed; web image scan and Compose smoke both passed. |
 | Latest CI `npm audit` and `uv audit --locked` | PASS | Both dependency audit steps passed in the quality job; npm reports zero findings after the `minimatch` 11.0.1 override. |
 | Local API image Trivy 0.74.0 scan (`vuln,secret`, all severities) | FAIL | 201 Debian OS findings: 15 unknown, 65 low, 74 medium, 47 high, 0 critical; no secrets. Findings had no fixed versions; current apt candidates matched installed versions. |
 | Local web image scan before remediation | FAIL | Trivy 0.74.0 reported 238 Alpine findings, including 1 critical and 55 high. `apk policy` showed patched versions available from Alpine v3.23. |
 | Frontend image rebuild and Trivy 0.74.0 rescan | PASS | `apk update && apk upgrade` updated runtime packages; scan found zero vulnerabilities and zero secrets. |
-| CI web image scan in run 43050682639 | PASS | Trivy action completed successfully on the updated web image. |
+| CI web image scan in run 43051236619 | PASS | Trivy action completed successfully on the updated web image. |
 | Isolated Compose rebuild/start after frontend image update | PASS | `docker compose` with a temporary validation-only port override built the images and reached healthy PostgreSQL/API/web services. |
 | Compose smoke against updated web image | PASS | `python backend\scripts\smoke_compose.py --api-url http://127.0.0.1:18000 --web-url http://127.0.0.1:15173` passed API readiness, web response and Nginx-to-API proxy checks. |
-| CI Compose smoke in run 43050682639 | PASS | The smoke step ran after the API scan failed and passed, verifying the workflow continuation condition. |
+| CI Compose smoke in run 43051236619 | PASS | The smoke step ran after the API scan failed and passed, verifying the workflow continuation condition. |
 | Post-validation cleanup | PASS | Removed only the isolated test stack, network and temporary database volume; retained local image tags. |
 | CI workflow formatting (`prettier --check .github/workflows/ci.yml`) | PASS | YAML parses and formats cleanly; run 43050682639 confirmed the new continuation conditions. |
 
@@ -140,9 +141,9 @@ Exit criteria remain partial; Phase 9 is not started.
   or a human-approved alternative image strategy, plus Phase 2 interviews,
   Figma, and usability results.
 - Hypotheses about UX remain unvalidated.
-- GitHub quality success is claimed for runs 42640812502 and 43050682639.
-  Run 43050682639 also passed web scan and smoke; the full workflow is not
-  green because the API scan failed. No registry push, digest, or cloud
+- GitHub quality success is claimed for runs 42640812502, 43050682639, and
+  43051236619. The latter two also passed web scan and smoke; the full workflow
+  is not green because the API scan failed. No registry push, digest, or cloud
   deployment is claimed.
 - The pre-existing untracked `backend/ripple_effect.sqlite3` demo database was
   not added to the changes.
@@ -153,7 +154,7 @@ Exit criteria remain partial; Phase 9 is not started.
   the shell entrypoint invalid. LF normalization and a `.gitattributes` rule
   fixed the root cause; the subsequent image build, startup, health and smoke
   checks passed.
-- GitHub run 43050682639 passed quality, web image scan, and smoke but failed
+- GitHub run 43051236619 passed quality, web image scan, and smoke but failed
   the API Trivy scan. The local API image still has unpatched Debian OS
   advisories; a Debian 12 base comparison had more findings, including
   critical findings, so an older base is not a suitable workaround.
