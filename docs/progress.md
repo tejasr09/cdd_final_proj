@@ -1,10 +1,10 @@
 # Ripple Effect — Project Progress
 
 - Last updated: 2026-11-11
-- Current phase: Phase 8 — Docker, Compose and CI in progress
+- Current phase: Phase 8 — verification complete; awaiting human review
 - Current branch: `feature/delivery-build`
-- Current commit: Phase 8 delivery commit (see `git log -1 --format=%h`)
-- Overall status: Phase 8 is approved. Compose, the API journey, and the browser journey passed locally. GitHub run 43051236619 passed quality, the web Trivy scan, and Compose smoke; the API Trivy scan remains the only failing step. Debian API image advisories currently have no available package fixes. Phase 8 exit remains partial; Phase 2 remains partial.
+- Current commit: see `git log -1 --format=%h`
+- Overall status: Phase 8 is approved and its exit criteria are met. The pinned Alpine API image passes local full-severity Trivy vulnerability and secret scans; Compose migration, seed, health, smoke, and event-to-analysis checks pass. GitHub run 43055479057 passed every gate. Await explicit human review before starting Phase 9; Phase 2 remains partial.
 
 ## Done
 
@@ -35,16 +35,22 @@
 - The Compose smoke script, a live PostgreSQL-backed event → trigger → open → analysis API journey, and a real-browser event-to-analysis journey through Nginx all passed. API and web containers were verified non-root.
 - Removed only the isolated test project's containers, network, and temporary PostgreSQL volume; Docker Desktop remains running and the two `:local` images remain built.
 - Frontend runtime image now upgrades Alpine packages from the current v3.23 repositories; the rebuilt image scans clean with Trivy 0.74.0 for vulnerabilities and secrets.
-- Local Trivy 0.74.0 scan of the API image still reports Debian OS advisories (47 high, 0 critical among 201 total findings); current Debian apt candidates match installed versions and Trivy reports no fixed versions.
-- GitHub Actions run 43051236619 confirms frontend/backend quality and audits pass. The API scan remains failing, while the updated web scan and Compose smoke steps both passed.
-- Updated CI conditions so the web scan and Compose smoke still run when Compose started successfully even if the API scan fails; the API scan remains a required failing gate. The updated behavior awaits the next branch run.
+- Replaced the API Debian base after confirming its 47 high advisories had no available package fixes and a Debian 12 comparison was worse. ADR-032 records the digest-pinned official Python 3.11 Alpine decision.
+- Rebuilt the production API image from the pinned Alpine base while retaining locked dependencies, non-root execution, migrations, optional seed, and health check.
+- Trivy 0.74.0 scanned both production images for OS/library vulnerabilities and secrets at all configured severities; JSON results showed zero vulnerabilities and zero secrets for each image.
+- A fresh isolated PostgreSQL Compose project migrated and seeded successfully; all services became healthy, both application containers ran non-root, and smoke plus event-to-trigger-to-open-to-analysis journey passed with eight results.
+- Cleaned only the isolated Compose project, its temporary database volume, and named scan artifacts; the pre-existing untracked SQLite demo database remains untouched.
+- GitHub Actions run 43055479057 on `cbfb812` passed quality, both image scans, Compose startup, smoke, and cleanup.
 
 ## In progress
 
 - Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
 - Human-owned Figma prototype and task-based testing; review/adapt the React concept, create the Figma artifact, and provide genuine findings/results.
-- Resolve or obtain human review for the API image's currently unpatched Debian advisories without suppressing scan results or changing severity thresholds.
-- Review the Phase 8 report and latest CI results before deciding whether Phase 8 can close; do not start Phase 9 until explicitly approved.
+- Complete Phase 8 human review and explicitly approve closure before Phase 9.
+
+## Next
+
+- Review the Phase 8 exit assessment and explicitly approve closure; Phase 9 is not authorized by this work.
 
 ## Ambiguity register
 
@@ -67,7 +73,7 @@
 
 | Order | Work item | Acceptance criteria |
 |---|---|---|
-| In progress | Phase 8 delivery | Local Compose is reproducible and approved CI checks pass; image/build evidence is genuine |
+| Awaiting review | Phase 8 delivery | Local Compose is reproducible and approved CI checks pass; image/build evidence is genuine; human closure approval is pending |
 | Parallel human work | Complete Phase 2 research and Figma work | Human-owned clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
 | Later | Phase 9 cloud | Human-approved ACR/ACI deployment uses recorded immutable digest; health, rollback and cleanup are verified |
 | Later | Phase 11 release hardening | Security, tests, accessibility, docs and evidence are reviewed; unmet criteria/limitations are explicit |
@@ -75,17 +81,16 @@
 
 ## Blockers
 
-- The latest completed CI run is [43051236619](https://github.com/tejasr09/cdd_final_proj/actions/runs/43051236619) on commit `6bc7306`: quality, web image scan, and Compose smoke passed; the API image scan failed.
-- `npm audit` now passes with zero findings after the `minimatch` override to 11.0.1; backend `uv audit --locked` also passed in the latest CI quality job.
-- The current Debian 13 API image scan still reports 201 OS findings (15 unknown, 65 low, 74 medium, 47 high, 0 critical) and no secrets. The high findings have no fixed versions in the current Trivy database; `apt-cache policy` showed installed versions equal to repository candidates.
-- A comparison against the unupgraded Debian 12 base had more findings, including critical findings; do not change to that older base to evade the current advisories.
+- No Phase 8 technical blocker remains. GitHub run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) on `cbfb812` passed quality, both full-severity image scans, Compose startup, smoke, and cleanup.
+- Human review and explicit Phase 8 closure approval remain required before Phase 9.
+- `npm audit` and `uv audit --locked` passed in the green CI quality job.
 - Production authentication provider remains intentionally undecided. The local/test membership and role adapter exists; production authentication is not implemented.
 - Human interviews, consent, actual UX findings, Figma prototype, and usability results do not exist yet; Phase 2 is partial until supplied and reviewed.
 - The former synthetic click-through remains documented as historical; the active frontend uses API data. Phase 2 interview, Figma and usability evidence remains absent.
 - A fresh PostgreSQL Compose database was migrated and seeded during Phase 8 startup. Production PostgreSQL and concurrent tenant/scenario behavior remain unverified.
 - Analysis execution is synchronous; PostgreSQL concurrent-insert snapshot consistency has not been stress-tested.
 - Scenario behavior is verified with SQLite API tests; live PostgreSQL concurrent scenario updates remain unverified.
-- Cloud resources remain future-phase/human work. Remote CI has run, but Phase 8 exit criteria are not met until the API scan is resolved or reviewed.
+- Cloud resources remain future-phase/human work. Phase 8 verification does not imply cloud deployment approval.
 - The root `agent-brief.md` points to `docs/agent-brief.md`, which is absent. Phase 4 requirements were taken from the available root continuation brief; neither brief was rewritten.
 
 ## Verification
@@ -188,10 +193,15 @@
 | 2026-11-11 | `prettier --check .github/workflows/ci.yml` | PASS | Workflow YAML formatting and parsing passed after making web scan and smoke independent of API scan failure |
 | 2026-11-11 | GitHub Actions run [43050682639](https://github.com/tejasr09/cdd_final_proj/actions/runs/43050682639) on `5186ab7` | PARTIAL | Quality passed; API Trivy scan failed; web scan and Compose smoke passed, confirming the updated step conditions |
 | 2026-11-11 | GitHub Actions run [43051236619](https://github.com/tejasr09/cdd_final_proj/actions/runs/43051236619) on `6bc7306` | PARTIAL | Documentation-only follow-up repeated the result: quality, web scan and Compose smoke passed; API scan failed |
+| 2026-11-11 | Production API image rebuild from digest-pinned Python 3.11 Alpine base | PASS | Locked dependencies, non-root runtime, entrypoint, migrations, optional seed, port and health check retained |
+| 2026-11-11 | Fresh isolated PostgreSQL Compose startup and smoke | PASS | Migration and seed succeeded; PostgreSQL, API and web healthy; readiness, web response and Nginx proxy passed |
+| 2026-11-11 | Production-image event → trigger → open → analysis journey | PASS | Analysis completed with 8 affected-entity results |
+| 2026-11-11 | Trivy 0.74.0 API and web image scans (`vuln,secret`; all severities; OS/library) | PASS | Each JSON report contained zero vulnerabilities and zero secrets |
+| 2026-11-11 | GitHub Actions run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) on `cbfb812` | PASS | Quality passed (88 backend and 12 frontend tests); audits, API/web scans, Compose startup/smoke and cleanup passed |
 
 ## Decisions and ADRs
 
-- Accepted: ADR-001 through ADR-031; user approved proposed ADRs for Phase 1.
+- Accepted: ADR-001 through ADR-032; user approved proposed ADRs for Phase 1.
 - Runtime identity provider remains unselected, as specified by the auth adapter decision.
 - npm + uv package manager selection accepted; uv 0.13.7 installed in the user Python tool directory.
 - Detailed phase findings: `docs/reports/phase-0-report.md`.
@@ -216,7 +226,7 @@
 
 | Risk | Impact | Mitigation | Owner/status |
 |---|---|---|---|
-| API image OS advisories | CI cannot pass the full-severity API image scan | Keep all severities enabled; Debian 13 repository currently offers no patched candidate for flagged packages; re-scan when fixes land or obtain review for a vetted base-image change | Engineering, open |
+| API image OS advisories | CI could not pass the full-severity API image scan | Replaced the Debian base with the digest-pinned compatible Python 3.11 Alpine image; local and CI scans passed without suppression | Engineering, resolved |
 | Development dependency audit | npm/uv dependency advisories | `npm audit` and `uv audit --locked` pass in latest CI; retain checks | Engineering, verified |
 | Docker verification | Local Compose build/start acceptance | Docker Desktop 29.9.2; images, health, proxy, smoke and primary journey verified locally | Engineering, verified |
 | Production auth provider undecided | Cannot configure production identity safely | Keep adapter boundary; select provider and deployment config with human approval | TODO(human), planned |
@@ -230,7 +240,7 @@
 - Conduct and document Phase 2 interviews with suitable participants, appropriate consent, anonymized notes, and evidence-backed findings.
 - Create/own the clickable Figma prototype, conduct task-based tests, and provide actual frames/results for review.
 - Complete Phase 2 human research/Figma/usability deliverables when ready; Phase 2 remains partial.
-- Review the remaining API image advisories and approve any future base-image or runtime change if needed.
+- Review the Phase 8 report and explicitly approve closure before Phase 9.
 
 ## Evidence index
 
@@ -238,21 +248,21 @@
 - `docs/reports/phase3-report.md`
 - `docs/reports/phase4-report.md`, `docs/reports/phase5-report.md`, and `docs/reports/phase6-report.md`
 - `docs/reports/phase7-report.md`
-- `docs/reports/phase8-report.md` (partial exit assessment; latest CI and local image scan results recorded)
+- `docs/reports/phase8-report.md` (exit criteria met; awaiting human closure review)
 - `docs/api/README.md` and `docs/api/openapi.json`
 - `docs/adr/`
-- `.github/workflows/ci.yml` (approved workflow; run 43051236619 quality, web scan and smoke passed; API scan failed)
+- `.github/workflows/ci.yml` (approved workflow; run 43055479057 passed quality, both scans, Compose smoke, and cleanup)
 - `docs/viva-notes.md` (implementation status and evidence updated through Phase 8 work)
 - `docs/ux/` contains Phase 2 preparation documents and the historical synthetic React concept; no interview, human-owned Figma, or usability-test evidence exists.
 - Phase 1 code/test/API evidence is recorded in `docs/reports/phase1-report.md`; no CI, cloud, or benchmark evidence is claimed.
 
 ## Session handoff
 
-- Last completed task: reviewed GitHub CI and Trivy findings; updated the frontend image and verified local Compose and scans on `feature/delivery-build`.
-- Exact next task: human review of the unresolved API OS advisories and the Phase 8 partial exit report. Do not start Phase 9 without explicit approval.
+- Last completed task: replaced the API Debian base with the pinned Python Alpine image, verified zero-finding local scans and Compose journeys, and passed GitHub run 43055479057 on `feature/delivery-build`.
+- Exact next task: human review and explicit closure approval for the Phase 8 exit report. Do not start Phase 9 without approval.
 - Files to read first: both root-level briefs, this file, `README.md`, and `docs/architecture/container-view.md`.
-- Latest completed CI run: [43051236619](https://github.com/tejasr09/cdd_final_proj/actions/runs/43051236619). Quality, web scan and smoke passed; the API Trivy scan remains unclean.
-- Approval needed: review and disposition of remaining API image findings. The branch push and CI trigger are already approved; do not merge or deploy.
+- Latest completed CI run: [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057). Quality, dependency audits, API/web scans, Compose startup, smoke and cleanup passed.
+- Approval needed: review and explicitly close Phase 8 before any Phase 9 work. Do not merge or deploy.
 
 ## CI follow-up — 2026-11-11
 
@@ -266,6 +276,9 @@
 - Reproduced the configured Trivy 0.74.0 scan locally. The API image has 201 Debian OS advisories (47 high, 0 critical); no secrets or fixed versions were reported. Current Debian apt candidates match the installed packages, so another apt upgrade cannot resolve them today.
 - The original web image had 238 Alpine findings (1 critical, 55 high). Alpine v3.23 repositories offered patched packages; the frontend Dockerfile now updates packages during the final image stage. The rebuilt web image scans with zero vulnerability and secret findings.
 - Verified the updated web image with an isolated Compose rebuild/start and smoke checks on temporary host ports because a local Vite demo already occupies port 5173. All services became healthy; API readiness, web response and Nginx-to-API proxy passed; the stack and temporary database volume were removed.
-- The API Dockerfile continues to upgrade available Debian packages and remove unused base pip/setuptools/wheel. This reduced the previously reported exposure but did not clear the remaining unpatched Debian findings. Do not suppress advisories or lower scan thresholds.
-- Updated CI step conditions preserve the API failure gate but let the web scan and Compose smoke run when Compose startup succeeded; GitHub has not run this workflow revision yet.
+- Before the Alpine remediation, the API Dockerfile upgraded available Debian packages and removed unused base pip/setuptools/wheel, but unpatched findings remained. No advisories were suppressed and scan thresholds were not lowered.
+- Updated CI step conditions preserve the API failure gate while allowing the web scan and Compose smoke after successful Compose startup; run 43055479057 confirmed the behavior and passed every step.
 - The npm audit issue is resolved by the 11.0.1 override; do not retain the older progress note that it remains open.
+- Replaced the API Debian base with the digest-pinned Python 3.11 Alpine image recorded in ADR-032. The production API journey and local Trivy 0.74.0 scans passed with zero vulnerabilities and secrets.
+- GitHub Actions run 43055479057 on `cbfb812` passed quality (88 backend and 12 frontend tests), audits, API and web scans, Compose startup, smoke, and cleanup.
+- Phase 8 exit criteria are met. The report and evidence have been refreshed; wait for explicit human closure approval before Phase 9.

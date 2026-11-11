@@ -40,6 +40,11 @@ verification and full image scans are recorded in the Phase 8 report.
 
 ## Evidence
 
-The candidate image passed Trivy 0.74.0 vulnerability and secret scanning at
-all severities and a fresh Compose health/smoke check. The production-image
-rebuild and CI results remain to be recorded in the Phase 8 report.
+The production image rebuilt from the pinned base, started against a fresh
+Compose PostgreSQL volume, applied migrations and synthetic seed data, and
+passed the event-to-analysis journey. API and web containers were healthy and
+non-root. Trivy 0.74.0 reported zero vulnerabilities and zero secrets for both
+images at all severities. GitHub Actions run
+[43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057)
+passed quality, dependency audits, both image scans, Compose startup, smoke,
+and cleanup; details are recorded in the Phase 8 report.

@@ -4,7 +4,7 @@ Ripple Effect is a decision-support application for exploring how a modeled chan
 
 ## Current status
 
-Phases 1 and 3–7 are implemented, including the tenant-authorized API, deterministic analysis, scenario simulation, and the React/TypeScript workflow. Phase 8 is in progress: the local Compose images, PostgreSQL-backed startup, health checks, proxy, and event-to-analysis browser journey have been verified. The approved PR workflow has not run on GitHub, and the existing npm audit findings remain open. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human).
+Phases 1 and 3–7 are implemented, including the tenant-authorized API, deterministic analysis, scenario simulation, and the React/TypeScript workflow. Phase 8 verification is complete: the pinned Python Alpine API image passes local full-severity Trivy scans; Compose migration, seed, health, proxy, smoke, and event-to-analysis checks pass. GitHub CI run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) passed all checks. Phase 8 awaits human review before Phase 9. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human).
 
 The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together.
 
@@ -13,7 +13,7 @@ The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`ag
 - Node.js 24.14.1 or a compatible version supported by Vite.
 - Python 3.11 or newer within the selected support range.
 - npm and uv.
-- Docker Desktop for the optional local Compose stack. Compose image builds and startup were verified locally on 2026-11-09; GitHub CI has not yet run.
+- Docker Desktop for the optional local Compose stack. Compose builds and startup are verified locally; the current Phase 8 GitHub CI run is linked above.
 
 If `uv` is not installed, install the pinned tool from PyPI. With a pip `--user` install on Windows, add its Scripts directory to the current PowerShell session:
 

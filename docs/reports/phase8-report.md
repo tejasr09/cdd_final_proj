@@ -2,18 +2,19 @@
 
 Date: 2026-11-11
 Branch: `feature/delivery-build`
-Base commit: `4580fe9`; latest completed GitHub run reviewed here is
-[43051236619](https://github.com/tejasr09/cdd_final_proj/actions/runs/43051236619)
-for commit `6bc7306`.
+Base commit: `cbfb812`; verified GitHub Actions run:
+[43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057)
+for commit `cbfb812`.
 
 ## 1. Objective
 
 Provide production-oriented local images, a reproducible PostgreSQL/API/web
 Compose stack, smoke checks, and approved pull-request CI. Phase 8 was approved
-by the human. Local Compose acceptance is verified. The latest GitHub CI run
-passed quality, the web image scan, and Compose smoke, but failed the API image
-scan. Debian OS advisories remain in that image without current package fixes.
-Exit criteria remain partial; Phase 9 is not started.
+by the human. Local Compose acceptance and GitHub CI are verified. The Debian
+API base had OS advisories with no available fixes; a digest-pinned official
+Python 3.11 Alpine base resolved the scan without suppressions or severity
+changes. All Phase 8 exit criteria are met. Phase 9 is not started and remains
+blocked on explicit human approval after this report.
 
 ## 2. Work completed
 
@@ -43,8 +44,18 @@ Exit criteria remain partial; Phase 9 is not started.
   Action is Apache-2.0. The approved workflow ran on pushes to the feature
   branch; the latest run is linked below.
 - Updated the web-scan and smoke-step conditions to continue after an API scan
-  failure when Compose startup succeeded. The API scan remains a failing gate;
-  run 43050682639 confirmed that the web scan and smoke steps now complete.
+  failure when Compose startup succeeded. Earlier partial runs confirmed the
+  web scan and smoke steps continue after an API scan failure.
+- Replaced the Debian API base with the digest-pinned official Python 3.11
+  Alpine image, upgraded available Alpine packages, and retained locked
+  dependencies, non-root execution, entrypoint, migrations, optional seed,
+  exposed port, and health check. ADR-032 records the decision.
+- Rebuilt the API and web images and scanned both with Trivy 0.74.0 for
+  vulnerabilities and secrets at all severities; each scan reported zero
+  vulnerabilities and zero secrets.
+- Verified a fresh Compose PostgreSQL database migration and seed, all service
+  health checks, non-root API/web identities, readiness, Nginx proxy, smoke
+  check, and event → trigger → open → completed analysis journey (8 results).
 - Updated the container architecture, viva notes, and
   [`docs/progress.md`](../progress.md).
 - Added [`.gitattributes`](../../.gitattributes) to ensure shell scripts retain
@@ -61,7 +72,8 @@ Exit criteria remain partial; Phase 9 is not started.
 - The CI workflow has read-only repository permissions and runs on pull
   requests and pushes to `feature/delivery-build`. The branch-push trigger was
   added with the human's explicit approval.
-- No ADR was added or changed. Phase 2 remains human-led and incomplete.
+- Added ADR-032 for the API base-image choice. Phase 2 remains human-led and
+  incomplete.
 
 ## 4. Verification performed
 
@@ -78,6 +90,14 @@ Exit criteria remain partial; Phase 9 is not started.
 | `git diff --check` | PASS | No whitespace errors. |
 | `docker info --format '{{.ServerVersion}}'` | PASS | Docker Desktop Linux engine version `29.8.2`. |
 | `docker compose --project-name ripple-phase8-check --env-file .env.example up --build --detach --wait --wait-timeout 240` | PASS | Both images built; PostgreSQL, API and Nginx all reached healthy state. |
+| `docker compose --project-name ripple-phase8-final -f docker-compose.yml -f docker-compose.api-candidate.yml --env-file .env.example build --pull` | PASS | Production API built from the digest-pinned Python Alpine base; web image rebuilt. |
+| `docker compose --project-name ripple-phase8-final -f docker-compose.yml -f docker-compose.api-candidate.yml --env-file .env.example up --detach --wait --wait-timeout 240` | PASS | Fresh PostgreSQL volume migrated and seeded; PostgreSQL, API and web all healthy. |
+| `python backend\scripts\smoke_compose.py --api-url http://127.0.0.1:18000 --web-url http://127.0.0.1:15173` | PASS | API readiness, web response, and Nginx-to-API proxy passed. |
+| PostgreSQL-backed event → trigger → open → analysis journey against the production API image | PASS | Analysis completed and returned 8 affected-entity results. |
+| `docker inspect` runtime identity and health checks | PASS | API ran as `appuser`, web as UID 101; both healthy. |
+| Trivy 0.74.0 scan of saved API and web images (`vuln,secret`; `UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL`; `os,library`) | PASS | JSON reports contained zero vulnerabilities and zero secrets in each image. |
+| GitHub Actions run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) on `cbfb812` | PASS | Quality and container jobs passed; API and web scans, Compose startup, smoke, and cleanup all passed. |
+| `docker compose ... down --volumes --remove-orphans` for `ripple-phase8-final` | PASS | Removed only the isolated containers, network and temporary database volume. |
 | First isolated Compose startup | FAIL, resolved | CRLF in the new shell entrypoint caused `/bin/sh` to reject `set -eu`; normalized the file and added `.gitattributes`, then rebuilt successfully. |
 | `python backend\scripts\smoke_compose.py` against Compose | PASS | API readiness, Nginx web page, and Nginx-to-API proxy passed. |
 | Compose API event-to-analysis journey | PASS | Created event, attached trigger, opened event, ran analysis; 8 results returned. |
@@ -109,27 +129,25 @@ Exit criteria remain partial; Phase 9 is not started.
   Compose verification passed. The first container attempt exposed the
   resolved CRLF issue.
 - In run 43050682639, the web scan and Compose smoke ran and passed despite
-  the preceding API scan failure. The API image remains unclean.
+  the preceding API scan failure; this was resolved by the later Alpine base.
 - Coverage: not measured.
-- Known gaps: API Debian advisories have no current package fixes; local
-  PostgreSQL verification is not production-scale evidence.
+- Known gaps: local PostgreSQL verification is not production-scale evidence.
 
 ## 6. Security and data integrity
 
 - Tenant-isolation and authorization code was not changed; the existing
   backend suite, including tenancy/API checks, passed.
-- Trivy 0.74.0 local `vuln,secret` scans reported zero secrets in either
-  image. Build contexts exclude environment files and local SQLite/database
-  files.
+- Trivy 0.74.0 local `vuln,secret` scans reported zero vulnerabilities and zero
+  secrets in both images at every configured severity. Build contexts exclude
+  environment files and local SQLite/database files.
 - Dependency/container scan: CI configuration includes `npm audit`,
   `uv audit --locked`, and Trivy scans for vulnerabilities and secrets across
-  all severities. The latest CI dependency audits passed. The updated web
-  image scan passed locally.
-- The API image scan remains a blocker: local Trivy reported 201 Debian OS
-  findings, including 47 high and no critical findings. The flagged high
-  findings had no fixed versions in the current Trivy data, and apt candidates
-  were equal to the installed versions. The API Dockerfile already upgrades
-  available packages and removes unused base pip/setuptools/wheel.
+  all severities. GitHub run 43055479057 passed both dependency audits and
+  both image scans.
+- The former Debian API image had 201 findings, including 47 high and no
+  critical findings; current Debian repositories had no fixes. It was replaced
+  with the pinned, compatible Python 3.11 Alpine base and the production image
+  now passes the configured scan.
 - No scan severity was reduced, and no vulnerability ignore list was added.
 - Audit-log behavior and application authorization were not changed.
 
@@ -137,14 +155,10 @@ Exit criteria remain partial; Phase 9 is not started.
 
 - Evidence produced: local test/check results above, Compose syntax validation,
   smoke results against local services, and the checked-in CI workflow.
-- Evidence still TODO(human): successful API image scan after upstream fixes
-  or a human-approved alternative image strategy, plus Phase 2 interviews,
-  Figma, and usability results.
+- Evidence still TODO(human): Phase 2 interviews, Figma, and usability results.
 - Hypotheses about UX remain unvalidated.
-- GitHub quality success is claimed for runs 42640812502, 43050682639, and
-  43051236619. The latter two also passed web scan and smoke; the full workflow
-  is not green because the API scan failed. No registry push, digest, or cloud
-  deployment is claimed.
+- GitHub Actions run 43055479057 is fully green on the approved branch. No
+  registry push or cloud deployment is claimed.
 - The pre-existing untracked `backend/ripple_effect.sqlite3` demo database was
   not added to the changes.
 
@@ -155,9 +169,8 @@ Exit criteria remain partial; Phase 9 is not started.
   fixed the root cause; the subsequent image build, startup, health and smoke
   checks passed.
 - GitHub run 43051236619 passed quality, web image scan, and smoke but failed
-  the API Trivy scan. The local API image still has unpatched Debian OS
-  advisories; a Debian 12 base comparison had more findings, including
-  critical findings, so an older base is not a suitable workaround.
+  the API Trivy scan. The issue was resolved with the tested, digest-pinned
+  Alpine API base; run 43055479057 passed all workflow gates.
 - The original web image had patched Alpine package versions available. Adding
   `apk update && apk upgrade` to its runtime stage resolved the local web scan;
   Compose health and smoke checks passed afterward.
@@ -167,26 +180,21 @@ Exit criteria remain partial; Phase 9 is not started.
 ## 9. Progress file
 
 [`docs/progress.md`](../progress.md) records the current phase, branch
-`feature/delivery-build`, base commit `4580fe9`, completed and pending work,
+`feature/delivery-build`, commit `cbfb812`, completed and pending work,
 verification results, blockers, approvals, and the next actions.
 
 ## 10. Human review required
 
-1. Review the remaining API Debian findings and decide whether to wait for
-   upstream package fixes or approve investigation of a different supported
-   runtime base. Do not waive findings or weaken thresholds.
-2. Review the Phase 8 partial exit assessment. Do not start Phase 9 or merge
-   until the API scan is resolved and the phase is explicitly reviewed.
-3. Keep the untracked local demo database out of commits.
+1. Review this Phase 8 report and explicitly approve closure before Phase 9.
+2. Keep the pre-existing untracked local demo database out of commits.
 
 ## 11. Phase exit assessment
 
-- Exit criteria met: **PARTIAL**.
-- Evidence-backed explanation: Compose configuration, local application
-  checks, Docker image builds, PostgreSQL migrations/seeding, service health,
-  Nginx proxy, smoke checks, and the event-to-analysis browser journey passed.
-  GitHub quality, dependency audits, web scan, and smoke passed, but the API
-  image scan failed. Current Debian apt repositories provide no fix for the
-  API findings.
-- Recommended next: remain in Phase 8 and obtain human review of the API image
-  findings. Do not start Phase 9.
+- Exit criteria met: **YES**.
+- Evidence-backed explanation: fresh local Compose startup, PostgreSQL
+  migration/seed, health and non-root checks, Nginx proxy, smoke and API
+  analysis journey passed. Trivy 0.74.0 found zero vulnerabilities and zero
+  secrets in both images. GitHub Actions run 43055479057 passed quality,
+  dependency audits, both image scans, Compose startup, smoke, and cleanup.
+- Recommended next: human review and explicit Phase 8 closure approval. Do not
+  start Phase 9 before that approval.
