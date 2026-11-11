@@ -1,10 +1,10 @@
 FROM ghcr.io/astral-sh/uv:0.13.7 AS uv
 
-FROM python:3.11-slim
+FROM python:3.11-alpine@sha256:bb1d70c1df30d8ee1e05214dbe82d6cdfd29833c1f47ce917f20991aca93acaa
 
-RUN apt-get update \
-    && apt-get upgrade -y --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk update \
+    && apk upgrade \
+    && rm -rf /var/cache/apk/*
 
 COPY --from=uv /uv /uvx /bin/
 
@@ -23,7 +23,7 @@ COPY app ./app
 COPY migrations ./migrations
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 
-RUN useradd --create-home --uid 10001 appuser
+RUN adduser -D -u 10001 appuser
 USER appuser
 
 EXPOSE 8000
