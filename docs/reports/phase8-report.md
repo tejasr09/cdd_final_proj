@@ -2,18 +2,18 @@
 
 Date: 2026-11-11
 Branch: `feature/delivery-build`
-Base commit: `4580fe9`; latest GitHub run reviewed here is for commit `3e6926d`.
-The local frontend image security fix is not yet covered by a GitHub run.
+Base commit: `4580fe9`; latest GitHub run reviewed here is
+[43050682639](https://github.com/tejasr09/cdd_final_proj/actions/runs/43050682639)
+for commit `5186ab7`.
 
 ## 1. Objective
 
 Provide production-oriented local images, a reproducible PostgreSQL/API/web
 Compose stack, smoke checks, and approved pull-request CI. Phase 8 was approved
-by the human. Local Compose acceptance is verified. GitHub CI has run: its
-quality job passed, but the container job failed the API image scan. Local
-Trivy checks show the updated web image is clean, while Debian OS advisories
-remain in the API image without current package fixes. Exit criteria remain
-partial; Phase 9 is not started.
+by the human. Local Compose acceptance is verified. The latest GitHub CI run
+passed quality, the web image scan, and Compose smoke, but failed the API image
+scan. Debian OS advisories remain in that image without current package fixes.
+Exit criteria remain partial; Phase 9 is not started.
 
 ## 2. Work completed
 
@@ -44,7 +44,7 @@ partial; Phase 9 is not started.
   branch; the latest run is linked below.
 - Updated the web-scan and smoke-step conditions to continue after an API scan
   failure when Compose startup succeeded. The API scan remains a failing gate;
-  this workflow adjustment awaits GitHub verification.
+  run 43050682639 confirmed that the web scan and smoke steps now complete.
 - Updated the container architecture, viva notes, and
   [`docs/progress.md`](../progress.md).
 - Added [`.gitattributes`](../../.gitattributes) to ensure shell scripts retain
@@ -85,15 +85,18 @@ partial; Phase 9 is not started.
 | Container user/health inspection | PASS | API ran as `appuser`, web as non-root UID 101; API, web and PostgreSQL were healthy. |
 | `docker compose --project-name ripple-phase8-check --env-file .env.example down --volumes --remove-orphans` | PASS | Removed only the isolated test containers/network and its temporary database volume; Docker Desktop remains running. |
 | Docker engine on 2026-11-11 | PASS | Docker Desktop Linux engine version `29.9.2`. |
-| GitHub Actions run [42640812502](https://github.com/tejasr09/cdd_final_proj/actions/runs/42640812502), commit `3e6926d` | PARTIAL | Quality job passed. Compose build/start passed; `Scan API image` failed, so web scan and smoke step were skipped. |
+| GitHub Actions run [42640812502](https://github.com/tejasr09/cdd_final_proj/actions/runs/42640812502), commit `3e6926d` | PARTIAL | Quality job passed. Compose build/start passed; `Scan API image` failed, so web scan and smoke step were skipped by the earlier conditions. |
+| GitHub Actions run [43050682639](https://github.com/tejasr09/cdd_final_proj/actions/runs/43050682639), commit `5186ab7` | PARTIAL | Quality passed; API image scan failed; web image scan and Compose smoke both passed. |
 | Latest CI `npm audit` and `uv audit --locked` | PASS | Both dependency audit steps passed in the quality job; npm reports zero findings after the `minimatch` 11.0.1 override. |
 | Local API image Trivy 0.74.0 scan (`vuln,secret`, all severities) | FAIL | 201 Debian OS findings: 15 unknown, 65 low, 74 medium, 47 high, 0 critical; no secrets. Findings had no fixed versions; current apt candidates matched installed versions. |
 | Local web image scan before remediation | FAIL | Trivy 0.74.0 reported 238 Alpine findings, including 1 critical and 55 high. `apk policy` showed patched versions available from Alpine v3.23. |
 | Frontend image rebuild and Trivy 0.74.0 rescan | PASS | `apk update && apk upgrade` updated runtime packages; scan found zero vulnerabilities and zero secrets. |
+| CI web image scan in run 43050682639 | PASS | Trivy action completed successfully on the updated web image. |
 | Isolated Compose rebuild/start after frontend image update | PASS | `docker compose` with a temporary validation-only port override built the images and reached healthy PostgreSQL/API/web services. |
 | Compose smoke against updated web image | PASS | `python backend\scripts\smoke_compose.py --api-url http://127.0.0.1:18000 --web-url http://127.0.0.1:15173` passed API readiness, web response and Nginx-to-API proxy checks. |
+| CI Compose smoke in run 43050682639 | PASS | The smoke step ran after the API scan failed and passed, verifying the workflow continuation condition. |
 | Post-validation cleanup | PASS | Removed only the isolated test stack, network and temporary database volume; retained local image tags. |
-| CI workflow formatting (`prettier --check .github/workflows/ci.yml`) | PASS | YAML parses and formats cleanly; execution of the new continuation conditions is pending. |
+| CI workflow formatting (`prettier --check .github/workflows/ci.yml`) | PASS | YAML parses and formats cleanly; run 43050682639 confirmed the new continuation conditions. |
 
 ## 5. Test results
 
@@ -104,9 +107,8 @@ partial; Phase 9 is not started.
   initially blocked; Docker Desktop was then started and the full local
   Compose verification passed. The first container attempt exposed the
   resolved CRLF issue.
-- Skipped in the latest CI container job: web scan and Compose smoke, because
-  the preceding API image scan failed. Both images were scanned locally after
-  the web-image update; only the API image remains unclean.
+- In run 43050682639, the web scan and Compose smoke ran and passed despite
+  the preceding API scan failure. The API image remains unclean.
 - Coverage: not measured.
 - Known gaps: API Debian advisories have no current package fixes; local
   PostgreSQL verification is not production-scale evidence.
@@ -138,9 +140,10 @@ partial; Phase 9 is not started.
   or a human-approved alternative image strategy, plus Phase 2 interviews,
   Figma, and usability results.
 - Hypotheses about UX remain unvalidated.
-- GitHub CI quality success is claimed only for run 42640812502. The full
-  workflow is not green; no registry push, digest, or cloud deployment is
-  claimed.
+- GitHub quality success is claimed for runs 42640812502 and 43050682639.
+  Run 43050682639 also passed web scan and smoke; the full workflow is not
+  green because the API scan failed. No registry push, digest, or cloud
+  deployment is claimed.
 - The pre-existing untracked `backend/ripple_effect.sqlite3` demo database was
   not added to the changes.
 
@@ -150,10 +153,10 @@ partial; Phase 9 is not started.
   the shell entrypoint invalid. LF normalization and a `.gitattributes` rule
   fixed the root cause; the subsequent image build, startup, health and smoke
   checks passed.
-- GitHub run 42640812502 passed quality but failed the API Trivy scan. The
-  local API image still has unpatched Debian OS advisories; a Debian 12 base
-  comparison had more findings, including critical findings, so an older base
-  is not a suitable workaround.
+- GitHub run 43050682639 passed quality, web image scan, and smoke but failed
+  the API Trivy scan. The local API image still has unpatched Debian OS
+  advisories; a Debian 12 base comparison had more findings, including
+  critical findings, so an older base is not a suitable workaround.
 - The original web image had patched Alpine package versions available. Adding
   `apk update && apk upgrade` to its runtime stage resolved the local web scan;
   Compose health and smoke checks passed afterward.
@@ -181,8 +184,8 @@ verification results, blockers, approvals, and the next actions.
 - Evidence-backed explanation: Compose configuration, local application
   checks, Docker image builds, PostgreSQL migrations/seeding, service health,
   Nginx proxy, smoke checks, and the event-to-analysis browser journey passed.
-  GitHub quality and dependency audits passed, but the API image scan failed.
-  The web image scans clean locally after its Alpine packages were upgraded;
-  current Debian apt repositories provide no fix for the API findings.
+  GitHub quality, dependency audits, web scan, and smoke passed, but the API
+  image scan failed. Current Debian apt repositories provide no fix for the
+  API findings.
 - Recommended next: remain in Phase 8 and obtain human review of the API image
   findings. Do not start Phase 9.
