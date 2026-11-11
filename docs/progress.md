@@ -1,10 +1,10 @@
 # Ripple Effect — Project Progress
 
-- Last updated: 2026-11-11
-- Current phase: Phase 8 — complete; closure approved 2026-11-11
-- Current branch: `feature/delivery-build`
-- Current commit: see `git log -1 --format=%h`
-- Overall status: Phase 8 exit criteria are met and closure was explicitly approved on 2026-11-11. The pinned Alpine API image passes local full-severity Trivy vulnerability and secret scans; Compose migration, seed, health, smoke, and event-to-analysis checks pass. GitHub run 43055479057 passed every gate. Phase 9 has not started and requires separate approval; Phase 2 remains partial.
+- Last updated: 2026-11-12
+- Current phase: Phase 10 — kickoff approved; implementation scope is being selected
+- Current branch: `feature/phase9-acr-aci`
+- Base commit: `c5d4715` (Phase 8 closure)
+- Overall status: Phase 8 closure was approved on 2026-11-11. At the human's direction on 2026-11-12, Phase 9 is paused/closed as PARTIAL, not complete: local checks and Bicep compilation passed, but branch CI and human Azure deployment evidence remain outstanding. Phase 10 kickoff is approved; the Jenkins/Kubernetes implementation approach is pending selection. No remote CI or Azure/cloud operation was performed. Public ingress remains disabled pending production authentication and TLS ingress. Phase 2 remains partial.
 
 ## Done
 
@@ -33,7 +33,7 @@
 - Started Docker Desktop Linux engine 29.8.2 and built both local images. PostgreSQL, API, and Nginx became healthy under isolated Compose project `ripple-phase8-check`.
 - Resolved the first container startup failure: Windows CRLF line endings caused `set -eu` to fail in `/bin/sh`. Added `.gitattributes` to keep shell scripts LF-normalized and rebuilt successfully.
 - The Compose smoke script, a live PostgreSQL-backed event → trigger → open → analysis API journey, and a real-browser event-to-analysis journey through Nginx all passed. API and web containers were verified non-root.
-- Removed only the isolated test project's containers, network, and temporary PostgreSQL volume; Docker Desktop remains running and the two `:local` images remain built.
+- Removed only the isolated test project's containers, network, and temporary PostgreSQL volume; Docker Desktop was running for that Phase 8 verification and the two `:local` images remained built then.
 - Frontend runtime image now upgrades Alpine packages from the current v3.23 repositories; the rebuilt image scans clean with Trivy 0.74.0 for vulnerabilities and secrets.
 - Replaced the API Debian base after confirming its 47 high advisories had no available package fixes and a Debian 12 comparison was worse. ADR-032 records the digest-pinned official Python 3.11 Alpine decision.
 - Rebuilt the production API image from the pinned Alpine base while retaining locked dependencies, non-root execution, migrations, optional seed, and health check.
@@ -41,14 +41,26 @@
 - A fresh isolated PostgreSQL Compose project migrated and seeded successfully; all services became healthy, both application containers ran non-root, and smoke plus event-to-trigger-to-open-to-analysis journey passed with eight results.
 - Cleaned only the isolated Compose project, its temporary database volume, and named scan artifacts; the pre-existing untracked SQLite demo database remains untouched.
 - GitHub Actions run 43055479057 on `cbfb812` passed quality, both image scans, Compose startup, smoke, and cleanup.
+- Phase 9 preparation: added Bicep ACR/ACI templates, a placeholder-only parameter example, a human-only deployment runbook, and ADR-033. The human selected Bicep on 2026-11-11. No secrets, Azure credentials, registry push, cloud resource changes, or deployment evidence were introduced.
+- Updated the frontend Nginx template to parameterize the API upstream: Compose defaults to `api:8000`; ACI is configured for `127.0.0.1:8000` within its container group. The image was subsequently built and both upstream configurations were smoke-checked on 2026-11-12.
+- Updated deployment architecture, README, viva notes, and this progress log to show Phase 9 as partial and distinguish preparation from verified deployment.
+- On 2026-11-12, built the API/web images and started PostgreSQL/API/web in isolated Compose project `ripple-phase9-agent-check`; all services became healthy. The Compose smoke test passed API readiness, web response, and proxy checks. Nginx parsed the ACI upstream config and preserved `$host`.
+- On 2026-11-12, 12 frontend tests and 88 backend tests passed; frontend lint, format, type-check, build, and backend Ruff checks passed.
+- Trivy 0.74.0 scanned both rebuilt images for OS/library vulnerabilities and secrets at UNKNOWN through CRITICAL with no ignores or lowered thresholds; each image reported zero vulnerabilities and zero secrets.
+- Removed only the Phase 9 isolated Compose project, its network and temporary database volume; the pre-existing `backend/ripple_effect.sqlite3` remains untouched. Docker Desktop Linux engine 29.9.3 was started per prior user authorization and remains available.
+- Updated the Phase 9 runbook, deployment architecture, report, and progress log with the new checks. Both Bicep templates compiled with CLI 0.49.2; Azure CLI and cloud validation remain unavailable.
 
 ## In progress
 
 - Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
 - Human-owned Figma prototype and task-based testing; review/adapt the React concept, create the Figma artifact, and provide genuine findings/results.
+- Phase 9 is paused as PARTIAL at the human's direction; the outstanding CI/cloud actions remain human-owned.
+- Phase 10 kickoff is approved; choose the local Kubernetes runtime and Jenkins execution approach before implementation.
 ## Next
 
-- Await separate explicit approval before starting Phase 9; do not begin cloud work.
+- Confirm whether Phase 10 should use Docker Desktop Kubernetes or another local cluster, and whether to run Jenkins in Docker or prepare pipeline/runbook artifacts only.
+- Human may later resume Phase 9: obtain authorized PR CI, review Azure account/cost/database requirements, publish immutable image digests, deploy ACI, verify health, and review rollback/cleanup.
+- No remote push, Azure login, cloud resource changes, or deployment is authorized by this phase transition.
 
 ## Ambiguity register
 
@@ -60,12 +72,13 @@
 | A-04 | Frontend styling system? | Tailwind proposal, subject to approval | TODO(human) |
 | A-05 | Python/Node lab constraints? | Verify maintained compatible releases; observed Python 3.11.9 and Node 24.14.1 are candidates only | Runtime observed; team constraints TODO(human) |
 | A-06 | Package managers? | npm + uv proposal | Resolved: npm + uv approved; uv 0.13.7 installed, Scripts directory not on PATH by default |
-| A-07 | Is Azure ACR/ACI available and budget-approved? | Local-first; human-operated cloud runbooks only | TODO(human) |
+| A-07 | Is Azure ACR/ACI available and budget-approved? | Local-first; human-operated cloud runbooks only | TODO(human); Phase 9 account/region/budget checks remain open |
 | A-08 | Is Docker Hub also required? | ACR remains target; use Docker Hub only if course requires | TODO(human) |
 | A-09 | Which UX participants are available? | Voluntary students/coordinators with consent; hypotheses remain unvalidated | TODO(human) |
 | A-10 | Is real institutional data needed? | Synthetic data only | Accepted default |
 | A-11 | Should Jenkins/Kubernetes be pursued? | Defer until MUST criteria and ACI milestone are complete | Accepted default |
 | A-12 | Course report/presentation format? | Follow official rubric if supplied; otherwise Section 15 | TODO(human) |
+| A-13 | Bicep or Terraform for Phase 9? | Bicep, as the Azure-native default | Resolved: human selected Bicep on 2026-11-11; ADR-033 |
 
 ## Next — ordered backlog and acceptance criteria
 
@@ -73,14 +86,14 @@
 |---|---|---|
 | Done | Phase 8 delivery | Local Compose is reproducible, approved CI checks pass, evidence is genuine, and human closure approval was given 2026-11-11 |
 | Parallel human work | Complete Phase 2 research and Figma work | Human-owned clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
-| Later | Phase 9 cloud | Human-approved ACR/ACI deployment uses recorded immutable digest; health, rollback and cleanup are verified |
+| Closed partial | Phase 9 ACR/ACI | Bicep compiles and local container checks pass; branch CI and human cloud deployment/evidence remain incomplete |
+| In progress | Phase 10 Jenkins/Kubernetes | Kickoff approved; implementation awaits local runtime and Jenkins execution choices |
 | Later | Phase 11 release hardening | Security, tests, accessibility, docs and evidence are reviewed; unmet criteria/limitations are explicit |
-| Optional | Phase 10 Jenkins/Kubernetes | Only after baseline and explicit approval; optional work does not delay required delivery |
 
 ## Blockers
 
 - No Phase 8 technical blocker remains. GitHub run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) on `cbfb812` passed quality, both full-severity image scans, Compose startup, smoke, and cleanup.
-- Phase 8 closure is approved. Separate human approval is still required before Phase 9.
+- Phase 8 closure is approved. Phase 9 preparation is authorized; cloud operations remain human-only under the brief.
 - `npm audit` and `uv audit --locked` passed in the green CI quality job.
 - Production authentication provider remains intentionally undecided. The local/test membership and role adapter exists; production authentication is not implemented.
 - Human interviews, consent, actual UX findings, Figma prototype, and usability results do not exist yet; Phase 2 is partial until supplied and reviewed.
@@ -88,7 +101,12 @@
 - A fresh PostgreSQL Compose database was migrated and seeded during Phase 8 startup. Production PostgreSQL and concurrent tenant/scenario behavior remain unverified.
 - Analysis execution is synchronous; PostgreSQL concurrent-insert snapshot consistency has not been stress-tested.
 - Scenario behavior is verified with SQLite API tests; live PostgreSQL concurrent scenario updates remain unverified.
-- Cloud resources remain future-phase/human work. Phase 8 verification does not imply cloud deployment approval.
+- Bicep CLI 0.49.2 compiled both templates on 2026-11-12. Azure CLI remains unavailable; Azure account, subscription, region and budget remain unconfirmed, and no cloud operation has occurred.
+- GitHub CI on this branch remains unrun because push/PR requires explicit remote authorization.
+- Phase 10 tooling probe: Docker CLI and `kubectl` are present, but Docker Desktop Linux engine is stopped and no Kubernetes current context/cluster is configured. `kind`, `minikube`, `helm`, and `jenkins` are not on PATH.
+- The production authentication provider remains undecided. Public ACI ingress must remain disabled until production authentication and TLS ingress are implemented and reviewed.
+- The human selected an existing PostgreSQL service; its endpoint, TLS configuration, firewall/network path, and ACI reachability are not yet verified.
+- Bicep was selected by the human and recorded in ADR-033; resource design, costs, and cloud provisioning still require human review.
 - The root `agent-brief.md` points to `docs/agent-brief.md`, which is absent. Phase 4 requirements were taken from the available root continuation brief; neither brief was rewritten.
 
 ## Verification
@@ -196,6 +214,28 @@
 | 2026-11-11 | Production-image event → trigger → open → analysis journey | PASS | Analysis completed with 8 affected-entity results |
 | 2026-11-11 | Trivy 0.74.0 API and web image scans (`vuln,secret`; all severities; OS/library) | PASS | Each JSON report contained zero vulnerabilities and zero secrets |
 | 2026-11-11 | GitHub Actions run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) on `cbfb812` | PASS | Quality passed (88 backend and 12 frontend tests); audits, API/web scans, Compose startup/smoke and cleanup passed |
+| 2026-11-11 | `docker compose --env-file .env.example config --quiet` | PASS | Local Compose configuration parsed; this did not build images or require the Docker daemon |
+| 2026-11-11 | Parse `infra\azure\aci.parameters.example.json` with PowerShell `ConvertFrom-Json` | PASS | Placeholder parameter example is valid JSON |
+| 2026-11-11 | `git diff --check` | PASS | No whitespace errors in tracked Phase 9 changes |
+| 2026-11-11 | Bicep/Azure CLI availability probe | PASS (unavailable) | `bicep` and `az` commands not found; no template compilation or Azure validation |
+| 2026-11-11 | `docker info --format '{{.ServerVersion}}'` | FAIL | Docker Desktop Linux engine pipe was unavailable at that checkpoint |
+| 2026-11-12 | `docker info --format '{{.ServerVersion}}'` | PASS | Docker Desktop Linux engine version 29.9.3; started per prior user authorization |
+| 2026-11-12 | `docker compose --project-name ripple-phase9-agent-check --env-file .env.example up --build --detach --wait --wait-timeout 240` | PASS | Both images built; db, API and web became healthy |
+| 2026-11-12 | `python backend\scripts\smoke_compose.py` | PASS | API readiness, web app and web-to-API proxy passed |
+| 2026-11-12 | `docker run --rm -e API_UPSTREAM=127.0.0.1:8000 ripple-effect-web:local nginx -T` | PASS | ACI upstream rendered; Nginx config parsed and `$host` was preserved |
+| 2026-11-12 | Trivy 0.74.0 `image` scans of `ripple-effect-api:local` and `ripple-effect-web:local` (`--vuln-type os,library --scanners vuln,secret --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL --exit-code 1`) | PASS | Each image: 0 vulnerabilities, 0 secrets |
+| 2026-11-12 | Frontend `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test -- --pool=forks --maxWorkers=1`, `npm run build` | PASS | 12 tests passed; all quality commands succeeded |
+| 2026-11-12 | Backend `.\.venv\Scripts\python.exe -m pytest`; Ruff `check app tests scripts`; Ruff `format --check app tests scripts` (from `backend`) | PASS | 88 tests passed; Ruff clean; 20 files formatted |
+| 2026-11-12 | Backend pytest invocation from repository root | FAIL, resolved | Five collection errors because `app` was not on the import path; rerun from `backend` passed |
+| 2026-11-12 | Initial Trivy Docker image reference `aquasecurity/trivy:0.74.0` | FAIL, resolved | Incorrect image name; corrected to cached official `aquasec/trivy:0.74.0`, then both scans passed |
+| 2026-11-12 | `docker compose --project-name ripple-phase9-agent-check --env-file .env.example down --volumes --remove-orphans` | PASS | Removed only isolated test containers, network and temporary PostgreSQL volume |
+| 2026-11-12 | Initial Bicep CLI probe | BLOCKED at that time | `bicep` was not yet on PATH; it became available later and both templates compiled successfully |
+| 2026-11-12 | GitHub CI for Phase 9 branch | NOT RUN | Would require a remote push or pull request; no remote action was authorized |
+| 2026-11-12 | Bicep CLI `0.49.2 bicep build .\infra\azure\provision.bicep --stdout` | PASS | Template compiled; stdout output discarded to avoid generated files |
+| 2026-11-12 | Bicep CLI `0.49.2 bicep build .\infra\azure\aci.bicep --stdout` | PASS | Template compiled; stdout output discarded to avoid generated files |
+| 2026-11-12 | Phase 10 local tooling probe (`docker`, `kubectl`, `kind`, `minikube`, `helm`, `java`, `jenkins`) | PARTIAL | Docker/kubectl/Java available; Docker engine stopped, no Kubernetes context, Jenkins/Helm/Kind/Minikube absent |
+| 2026-11-12 | `kubectl cluster-info` | BLOCKED | No current context; attempted localhost:8080 and no local Kubernetes API server was running |
+| 2026-11-12 | `docker info --format 'server={{.ServerVersion}} os={{.OSType}}'` | BLOCKED | Docker Desktop Linux engine pipe unavailable at Phase 10 kickoff |
 
 ## Decisions and ADRs
 
@@ -238,7 +278,8 @@
 - Conduct and document Phase 2 interviews with suitable participants, appropriate consent, anonymized notes, and evidence-backed findings.
 - Create/own the clickable Figma prototype, conduct task-based tests, and provide actual frames/results for review.
 - Complete Phase 2 human research/Figma/usability deliverables when ready; Phase 2 remains partial.
-- Phase 8 closure approved 2026-11-11; Phase 9 remains unapproved and unstarted.
+- Phase 8 closure approved 2026-11-11; Phase 9 preparation is authorized. All Azure resource creation, registry publishing, deployment, and cleanup remain human-operated.
+- Human must confirm account eligibility, region, cost/budget, publisher permissions, database TLS/network reachability, and production auth/TLS ingress plan.
 
 ## Evidence index
 
@@ -246,7 +287,10 @@
 - `docs/reports/phase3-report.md`
 - `docs/reports/phase4-report.md`, `docs/reports/phase5-report.md`, and `docs/reports/phase6-report.md`
 - `docs/reports/phase7-report.md`
-- `docs/reports/phase8-report.md` (exit criteria met; awaiting human closure review)
+- `docs/reports/phase8-report.md` (exit criteria met; closure approved 2026-11-11)
+- `docs/reports/phase9-report.md` (preparation only; exit criteria not met)
+- `docs/runbooks/phase9-acr-aci.md` (human-executed deployment, verification, rollback and cleanup)
+- `docs/adr/ADR-033-azure-container-deployment.md` (Bicep selected; resource design and provisioning need human review)
 - `docs/api/README.md` and `docs/api/openapi.json`
 - `docs/adr/`
 - `.github/workflows/ci.yml` (approved workflow; run 43055479057 passed quality, both scans, Compose smoke, and cleanup)
@@ -256,12 +300,12 @@
 
 ## Session handoff
 
-- Last completed task: replaced the API Debian base with the pinned Python Alpine image, verified zero-finding local scans and Compose journeys, and passed GitHub run 43055479057 on `feature/delivery-build`.
-- Exact next task: wait for explicit Phase 9 approval. Do not begin Phase 9 or cloud work before it.
+- Last completed phase: Phase 8 closure approved; Phase 9 preparation started on `feature/phase9-acr-aci`, based on `c5d4715`.
+- Exact next task: obtain CI after explicit remote authorization, and wait for human account/cost and external database network decisions before cloud work.
 - Files to read first: both root-level briefs, this file, `README.md`, and `docs/architecture/container-view.md`.
 - Phase 8 implementation verification run: [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) on `cbfb812`. Quality, dependency audits, API/web scans, Compose startup, smoke and cleanup passed.
 - Documentation follow-up run: [43056748402](https://github.com/tejasr09/cdd_final_proj/actions/runs/43056748402) on `f5bf230`; the refreshed report and progress documentation also passed CI.
-- Approval needed: separate authorization before Phase 9. Do not merge or deploy.
+- No remote push, pull request, image push, Azure resource operation, or deployment is authorized by this phase-preparation work.
 
 ## CI follow-up — 2026-11-11
 
@@ -281,3 +325,23 @@
 - Replaced the API Debian base with the digest-pinned Python 3.11 Alpine image recorded in ADR-032. The production API journey and local Trivy 0.74.0 scans passed with zero vulnerabilities and secrets.
 - GitHub Actions run 43055479057 on `cbfb812` passed quality (88 backend and 12 frontend tests), audits, API and web scans, Compose startup, smoke, and cleanup.
 - Phase 8 exit criteria are met. The report and evidence have been refreshed; wait for explicit human closure approval before Phase 9.
+
+## Phase 9 preparation — 2026-11-11
+
+- Started only the agent-owned preparation tasks on `feature/phase9-acr-aci`, based on Phase 8 commit `c5d4715`. The human selected an existing PostgreSQL service as the database target.
+- Drafted `infra/azure/provision.bicep`, `infra/azure/aci.bicep`, and `infra/azure/aci.parameters.example.json`; added `.gitignore` rules for local parameter files. The human selected Bicep for ADR-033; templates remain uncompiled.
+- Changed the frontend image to use an Nginx config template with a filtered `API_UPSTREAM` variable. Compose default remains `api:8000`; ACI config supplies `127.0.0.1:8000`. The image was not rebuilt or exercised.
+- Added the human-only runbook and updated architecture/README/viva notes. Public ingress is disabled by default because production auth and TLS ingress are not implemented.
+- Environment check: `Get-Command bicep` and `Get-Command az` returned not found. `docker info --format '{{.ServerVersion}}'` failed because `dockerDesktopLinuxEngine` was not running. No Azure sign-in, `what-if`, resource creation, registry login/push, Git push, or deployment occurred.
+- At this 2026-11-11 checkpoint, local image validation, CI on this branch, and all human deployment evidence remained TODO.
+
+## Phase 9 continuation — 2026-11-12
+
+- Started Docker Desktop Linux engine 29.9.3 under the user's prior authorization. Built and started an isolated Compose project; PostgreSQL, API and web all reported healthy.
+- `python backend\scripts\smoke_compose.py` passed API readiness, web app and proxy checks. A separate `docker run` with `API_UPSTREAM=127.0.0.1:8000` passed `nginx -T`; the generated proxy target was correct and Nginx variables such as `$host` were preserved.
+- Frontend lint, format, type-check, 12 tests and build passed. Backend pytest passed 88 tests; Ruff check and format check passed.
+- Trivy 0.74.0 scanned API and web images with OS/library and secret scanners at all configured severities. Each image reported zero vulnerabilities and zero secrets. No severity reduction or ignore was used.
+- Removed the named Phase 9 Compose test containers/network/database volume. Preserved the pre-existing untracked SQLite database.
+- Both Bicep templates compiled with CLI 0.49.2; Azure CLI is absent. No Azure operations, registry pushes, remote Git operations or GitHub CI run occurred.
+- At the human's direction, Phase 9 is paused/closed as **PARTIAL**, not complete; CI, ACR/ACI deployment, immutable digest verification, health evidence, and cost/cleanup review remain outstanding.
+- Phase 10 kickoff is approved. Implementation is paused pending the user's choice of local Kubernetes runtime and Jenkins execution mode; no Phase 10 artifacts or runtime deployment have been produced yet.

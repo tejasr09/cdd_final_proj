@@ -28,9 +28,9 @@ These notes describe the intended learning map. Do not describe planned behavior
 15. `PARTIAL` Git branches, commits, pull requests, and review. Work is isolated on `feature/delivery-build` and pushed to the authorized branch; no PR was opened. Human review remains required.
 16. `VERIFIED` CI stages and quality gates. [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs frontend/backend checks, migration validation, dependency audits, Compose startup/smoke checks and image scans on pull requests and pushes to `feature/delivery-build`. Actions are SHA-pinned; GitHub-maintained actions are MIT-licensed and Trivy Action is Apache-2.0. Run 43055479057 passed quality (88 backend and 12 frontend tests), dependency audits, both image scans, Compose startup, smoke and cleanup. An earlier API scan failure on Debian advisories was resolved by pinning the compatible Alpine base; no scan threshold was lowered and no finding was ignored.
 17. `IMPLEMENTED` Image tags versus immutable digests. Compose uses `ripple-effect-api:local` and `ripple-effect-web:local`; [`README.md`](../README.md) documents version/SHA release tags and recording/promoting the registry digest. No image was pushed and no digest is claimed.
-18. `PLANNED` ACR and ACI deployment.
-19. `PLANNED` Infrastructure as Code and plan/apply separation.
-20. `PLANNED` Security scanning and secret management.
+18. `PARTIAL` ACR and ACI deployment. ACR/ACI templates and human steps are in [`infra/azure/`](../infra/azure/) and [`docs/runbooks/phase9-acr-aci.md`](./runbooks/phase9-acr-aci.md). Both Bicep templates compile with CLI 0.49.2; no registry push, Azure resource creation, or deployment is verified. Public ingress remains disabled.
+19. `PARTIAL` Infrastructure as Code and plan/what-if separation. [`infra/azure/provision.bicep`](../infra/azure/provision.bicep) and [`infra/azure/aci.bicep`](../infra/azure/aci.bicep) are Bicep templates, selected by the human and recorded in ADR-033. The Bicep CLI is unavailable in this environment, so syntax and deployment previews remain unverified.
+20. `PARTIAL` Security scanning and secret management. Phase 8 CI and local image scans are recorded above. The ACI template uses a secure database URL parameter and managed identity for image pulls, but Azure secret handling and runtime security have not been exercised in a deployment.
 
 For each topic, add: what it means here; why it was chosen; implementation paths; a short example; test/evidence references; and a limitation or trade-off.
 

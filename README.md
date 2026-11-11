@@ -4,9 +4,9 @@ Ripple Effect is a decision-support application for exploring how a modeled chan
 
 ## Current status
 
-Phases 1 and 3–7 are implemented, including the tenant-authorized API, deterministic analysis, scenario simulation, and the React/TypeScript workflow. Phase 8 is complete and its closure was approved on 2026-11-11: the pinned Python Alpine API image passes local full-severity Trivy scans; Compose migration, seed, health, proxy, smoke, and event-to-analysis checks pass. GitHub CI run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) passed all checks. Phase 9 has not started and requires separate approval. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human).
+Phases 1 and 3–7 are implemented, including the tenant-authorized API, deterministic analysis, scenario simulation, and the React/TypeScript workflow. Phase 8 is complete and its closure was approved on 2026-11-11: the pinned Python Alpine API image passes local full-severity Trivy scans; Compose migration, seed, health, proxy, smoke, and event-to-analysis checks pass. GitHub CI run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) passed all checks. Phase 9 preparation is in progress on `feature/phase9-acr-aci`: Bicep templates and a human-operated ACR/ACI runbook are drafted for an existing PostgreSQL service. The templates have not been compiled, and no image was pushed or cloud resource deployed. Public ingress remains disabled because production authentication and TLS ingress are not implemented. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human).
 
-The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together.
+The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together. Phase 9 preparation and its limits are recorded in [`docs/reports/phase9-report.md`](./docs/reports/phase9-report.md) and the human-operated [`docs/runbooks/phase9-acr-aci.md`](./docs/runbooks/phase9-acr-aci.md).
 
 ## Requirements
 
@@ -184,8 +184,8 @@ docker buildx imagetools inspect <registry>/<namespace>/ripple-effect-web:<versi
 ```
 
 Use the reported `sha256` digest to promote the same image between
-environments, rather than rebuilding. No registry or release digest has been
-selected or published for this project.
+environments, rather than rebuilding. ACR is the approved cloud target, but no
+registry instance or release digest has been created or published.
 
 When Docker is available, Compose configuration can also be inspected with:
 
@@ -203,9 +203,10 @@ The approved workflow in `.github/workflows/ci.yml` runs on pull requests and
 pushes to `feature/delivery-build`. It runs frontend and backend quality
 checks, dependency audits, a Compose image build/start, Trivy scans of both
 images, and the Compose smoke test. Actions are pinned to immutable commit
-SHAs, with read-only repository permissions. Its full `npm audit` will expose
-the known moderate development-tool advisories, so CI is not expected to be
-green until those findings are resolved or formally reviewed.
+SHAs, with read-only repository permissions. GitHub Actions run
+[43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057)
+passed all configured checks, including dependency audits and both image
+scans. Phase 9 changes have not yet been included in CI.
 
 ## Project guidance
 
@@ -213,3 +214,4 @@ green until those findings are resolved or formally reviewed.
 - [`docs/progress.md`](./docs/progress.md) is the phase handoff and evidence index.
 - [`docs/adr/`](./docs/adr/) records approved design decisions.
 - [`docs/viva-notes.md`](./docs/viva-notes.md) distinguishes planned concepts from implemented work.
+- [`docs/architecture/deployment.md`](./docs/architecture/deployment.md) summarizes the local and proposed cloud deployment architecture.

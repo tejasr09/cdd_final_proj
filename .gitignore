@@ -18,3 +18,5 @@ frontend/playwright-report/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+infra/azure/*.local.parameters.json
+infra/azure/*.local.bicepparam

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "REPLACE_WITH_HUMAN_APPROVED_REGION"
+    },
+    "containerGroupName": {
+      "value": "ripple-effect-demo"
+    },
+    "registryName": {
+      "value": "REPLACE_WITH_ACR_NAME"
+    },
+    "imagePullIdentityName": {
+      "value": "ripple-effect-aci-pull"
+    },
+    "apiImage": {
+      "value": "REPLACE_WITH_ACR_LOGIN_SERVER/ripple-effect-api@sha256:REPLACE_WITH_VERIFIED_DIGEST"
+    },
+    "webImage": {
+      "value": "REPLACE_WITH_ACR_LOGIN_SERVER/ripple-effect-web@sha256:REPLACE_WITH_VERIFIED_DIGEST"
+    },
+    "databaseUrl": {
+      "value": "REPLACE_LOCALLY_WITH_TLS_ENABLED_POSTGRESQL_URL"
+    },
+    "publicIngressEnabled": {
+      "value": false
+    },
+    "dnsNameLabel": {
+      "value": ""
+    },
+    "owner": {
+      "value": "REPLACE_WITH_TEAM_OWNER_TAG"
+    },
+    "environment": {
+      "value": "demo"
+    }
+  }
+}
