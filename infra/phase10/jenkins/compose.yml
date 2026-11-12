@@ -1,0 +1,26 @@
+services:
+  jenkins:
+    image: ripple-phase10-jenkins:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - jenkins-home:/var/jenkins_home
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=2g
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 1536m
+    cpus: 1.5
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx768m -Djava.awt.headless=true -Djenkins.install.runSetupWizard=false"
+      JENKINS_OPTS: "--argumentsRealm.passwd.admin=admin --argumentsRealm.roles.admin=admin"
+
+volumes:
+  jenkins-home:

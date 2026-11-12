@@ -1,0 +1,231 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ripple-effect
+  labels:
+    app.kubernetes.io/part-of: ripple-effect
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ripple-api-config
+  namespace: ripple-effect
+data:
+  APP_ENV: development
+  DATABASE_URL: sqlite:////tmp/ripple-effect-phase10.sqlite3
+  ENABLE_LOCAL_AUTH: "true"
+  SEED_DEMO_DATA: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ripple-api
+  namespace: ripple-effect
+  labels:
+    app.kubernetes.io/name: ripple-api
+    app.kubernetes.io/part-of: ripple-effect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ripple-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ripple-api
+        app.kubernetes.io/part-of: ripple-effect
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: ripple-effect-api:local
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: ripple-api-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 750m
+              memory: 768Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          startupProbe:
+            httpGet:
+              path: /api/v1/health/live
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health/ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health/live
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ripple-api
+  namespace: ripple-effect
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ripple-api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ripple-web
+  namespace: ripple-effect
+  labels:
+    app.kubernetes.io/name: ripple-web
+    app.kubernetes.io/part-of: ripple-effect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ripple-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ripple-web
+        app.kubernetes.io/part-of: ripple-effect
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: nginx-config-bootstrap
+          image: ripple-effect-web:local
+          imagePullPolicy: Never
+          command:
+            - /bin/sh
+            - -c
+            - |
+              cp /etc/nginx/templates/default.conf.template /etc/nginx/conf.d/default.conf && chmod 0777 /etc/nginx/conf.d && chmod 0666 /etc/nginx/conf.d/default.conf
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            runAsUser: 0
+            runAsGroup: 0
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: rendered-config
+              mountPath: /etc/nginx/conf.d
+      containers:
+        - name: web
+          image: ripple-effect-web:local
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: API_UPSTREAM
+              value: ripple-api:8000
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /var/run
+            - name: tmp
+              mountPath: /tmp
+            - name: rendered-config
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: cache
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: run
+          emptyDir:
+            sizeLimit: 16Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
+        - name: rendered-config
+          emptyDir:
+            sizeLimit: 16Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ripple-web
+  namespace: ripple-effect
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ripple-web
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
