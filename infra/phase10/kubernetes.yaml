@@ -179,8 +179,6 @@ spec:
               mountPath: /var/run
             - name: tmp
               mountPath: /tmp
-            - name: rendered-config
-              mountPath: /etc/nginx/conf.d
       volumes:
         - name: cache
           emptyDir:
@@ -189,9 +187,6 @@ spec:
           emptyDir:
             sizeLimit: 16Mi
         - name: tmp
-          emptyDir:
-            sizeLimit: 16Mi
-        - name: rendered-config
           emptyDir:
             sizeLimit: 16Mi
 ---

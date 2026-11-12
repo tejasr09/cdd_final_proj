@@ -1,0 +1,227 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.49.2.45890",
+      "templateHash": "10181896739997737440"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Human-selected Azure region. Keep ACI close to the PostgreSQL service where possible."
+      }
+    },
+    "containerGroupName": {
+      "type": "string",
+      "defaultValue": "ripple-effect-demo",
+      "metadata": {
+        "description": "Name for the Linux container group."
+      }
+    },
+    "registryName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the existing Premium ACR created by provision.bicep."
+      }
+    },
+    "imagePullIdentityName": {
+      "type": "string",
+      "defaultValue": "ripple-effect-aci-pull",
+      "metadata": {
+        "description": "Name of the existing user-assigned identity granted AcrPull on the registry."
+      }
+    },
+    "apiImage": {
+      "type": "string",
+      "metadata": {
+        "description": "Full ACR image reference pinned to a sha256 digest, not a mutable tag."
+      }
+    },
+    "webImage": {
+      "type": "string",
+      "metadata": {
+        "description": "Full ACR image reference pinned to a sha256 digest, not a mutable tag."
+      }
+    },
+    "databaseUrl": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Existing PostgreSQL SQLAlchemy URL. Must use TLS; never store it in source control."
+      }
+    },
+    "publicIngressEnabled": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Public HTTP ingress is disabled by default. Do not enable until production auth and TLS ingress are approved."
+      }
+    },
+    "dnsNameLabel": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Globally unique ACI DNS label; required only when public ingress is explicitly enabled."
+      }
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "metadata": {
+        "description": "Human-selected owner/team tag; do not put personal contact details here."
+      }
+    },
+    "environment": {
+      "type": "string",
+      "defaultValue": "demo",
+      "metadata": {
+        "description": "Deployment environment tag."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('containerGroupName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('imagePullIdentityName')))]": {}
+        }
+      },
+      "properties": {
+        "containers": [
+          {
+            "name": "api",
+            "properties": {
+              "image": "[parameters('apiImage')]",
+              "ports": [
+                {
+                  "port": 8000,
+                  "protocol": "TCP"
+                }
+              ],
+              "environmentVariables": [
+                {
+                  "name": "APP_ENV",
+                  "value": "production"
+                },
+                {
+                  "name": "ENABLE_LOCAL_AUTH",
+                  "value": "false"
+                },
+                {
+                  "name": "SEED_DEMO_DATA",
+                  "value": "false"
+                },
+                {
+                  "name": "DATABASE_URL",
+                  "secureValue": "[parameters('databaseUrl')]"
+                }
+              ],
+              "resources": {
+                "requests": {
+                  "cpu": "0.5",
+                  "memoryInGB": "1.5"
+                }
+              },
+              "livenessProbe": {
+                "httpGet": {
+                  "path": "/api/v1/health/live",
+                  "port": 8000,
+                  "scheme": "Http"
+                },
+                "initialDelaySeconds": 30,
+                "periodSeconds": 30,
+                "failureThreshold": 3
+              },
+              "readinessProbe": {
+                "httpGet": {
+                  "path": "/api/v1/health/ready",
+                  "port": 8000,
+                  "scheme": "Http"
+                },
+                "initialDelaySeconds": 15,
+                "periodSeconds": 10,
+                "failureThreshold": 3
+              }
+            }
+          },
+          {
+            "name": "web",
+            "properties": {
+              "image": "[parameters('webImage')]",
+              "ports": [
+                {
+                  "port": 8080,
+                  "protocol": "TCP"
+                }
+              ],
+              "environmentVariables": [
+                {
+                  "name": "API_UPSTREAM",
+                  "value": "127.0.0.1:8000"
+                }
+              ],
+              "resources": {
+                "requests": {
+                  "cpu": "0.25",
+                  "memoryInGB": "0.5"
+                }
+              },
+              "livenessProbe": {
+                "httpGet": {
+                  "path": "/health",
+                  "port": 8080,
+                  "scheme": "Http"
+                },
+                "initialDelaySeconds": 10,
+                "periodSeconds": 30,
+                "failureThreshold": 3
+              },
+              "readinessProbe": {
+                "httpGet": {
+                  "path": "/health",
+                  "port": 8080,
+                  "scheme": "Http"
+                },
+                "initialDelaySeconds": 5,
+                "periodSeconds": 10,
+                "failureThreshold": 3
+              }
+            }
+          }
+        ],
+        "imageRegistryCredentials": [
+          {
+            "server": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('registryName')), '2025-11-01').loginServer]",
+            "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('imagePullIdentityName'))]"
+          }
+        ],
+        "osType": "Linux",
+        "restartPolicy": "Always",
+        "ipAddress": "[if(parameters('publicIngressEnabled'), createObject('type', 'Public', 'dnsNameLabel', parameters('dnsNameLabel'), 'ports', createArray(createObject('port', 8080, 'protocol', 'TCP'))), null())]"
+      },
+      "tags": {
+        "project": "ripple-effect",
+        "environment": "[parameters('environment')]",
+        "owner": "[parameters('owner')]"
+      }
+    }
+  ],
+  "outputs": {
+    "containerGroupId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ContainerInstance/containerGroups', parameters('containerGroupName'))]"
+    },
+    "publicIngressEnabled": {
+      "type": "bool",
+      "value": "[parameters('publicIngressEnabled')]"
+    }
+  }
+}

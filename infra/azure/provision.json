@@ -1,0 +1,112 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.49.2.45890",
+      "templateHash": "4599327072778990983"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Human-selected Azure region. Confirm eligibility and cost before deployment."
+      }
+    },
+    "registryName": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 50,
+      "metadata": {
+        "description": "Globally unique lowercase alphanumeric ACR name."
+      }
+    },
+    "imagePullIdentityName": {
+      "type": "string",
+      "defaultValue": "ripple-effect-aci-pull",
+      "metadata": {
+        "description": "User-assigned identity used by ACI to pull private images."
+      }
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "metadata": {
+        "description": "Human-selected owner/team tag; do not put personal contact details here."
+      }
+    },
+    "environment": {
+      "type": "string",
+      "defaultValue": "demo",
+      "metadata": {
+        "description": "Deployment environment tag."
+      }
+    }
+  },
+  "variables": {
+    "acrPullRoleDefinitionId": "7f951dda-4ed3-4680-a7ca-43fe172d538d"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2025-11-01",
+      "name": "[parameters('registryName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Premium"
+      },
+      "properties": {
+        "adminUserEnabled": false,
+        "anonymousPullEnabled": false,
+        "publicNetworkAccess": "Enabled"
+      },
+      "tags": {
+        "project": "ripple-effect",
+        "environment": "[parameters('environment')]",
+        "owner": "[parameters('owner')]"
+      }
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[parameters('imagePullIdentityName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "project": "ripple-effect",
+        "environment": "[parameters('environment')]",
+        "owner": "[parameters('owner')]"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('registryName'))]",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', parameters('registryName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('imagePullIdentityName')), variables('acrPullRoleDefinitionId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('acrPullRoleDefinitionId'))]",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('imagePullIdentityName')), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('imagePullIdentityName'))]",
+        "[resourceId('Microsoft.ContainerRegistry/registries', parameters('registryName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "registryId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('registryName'))]"
+    },
+    "registryLoginServer": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('registryName')), '2025-11-01').loginServer]"
+    },
+    "imagePullIdentityId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('imagePullIdentityName'))]"
+    }
+  }
+}
