@@ -135,6 +135,27 @@ spec:
         fsGroup: 101
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: nginx-config-bootstrap
+          image: ripple-effect-web:local
+          imagePullPolicy: Never
+          command:
+            - /bin/sh
+            - -c
+            - |
+              cp /etc/nginx/templates/default.conf.template /etc/nginx/conf.d/default.conf && chmod 0777 /etc/nginx/conf.d && chmod 0666 /etc/nginx/conf.d/default.conf
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            runAsUser: 0
+            runAsGroup: 0
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: rendered-config
+              mountPath: /etc/nginx/conf.d
       containers:
         - name: web
           image: ripple-effect-web:local
@@ -179,6 +200,8 @@ spec:
               mountPath: /var/run
             - name: tmp
               mountPath: /tmp
+            - name: rendered-config
+              mountPath: /etc/nginx/conf.d
       volumes:
         - name: cache
           emptyDir:
@@ -187,6 +210,9 @@ spec:
           emptyDir:
             sizeLimit: 16Mi
         - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
+        - name: rendered-config
           emptyDir:
             sizeLimit: 16Mi
 ---

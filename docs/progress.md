@@ -1,11 +1,11 @@
 # Ripple Effect — Project Progress
 
 - Last updated: 2026-11-12
-- Current phase: Phase 10 — local Jenkins/Kubernetes implementation in progress
+- Current phase: Phase 10 — local Jenkins/Kubernetes implementation complete
 - Current branch: `feature/phase10-advanced-devops`
 - Phase 10 implementation commit: `874ef74`
 - Base commit: `b469fd4` (Phase 9 preparation)
-- Overall status: Phase 8 closure was approved on 2026-11-11. At the human's direction on 2026-11-12, Phase 9 is paused as PARTIAL, not complete: local checks and Bicep compilation passed, but branch CI and human Azure deployment evidence remain outstanding. Phase 10 uses the approved Docker Desktop Kubernetes cluster and local Jenkins container. The application is healthy through loopback port forwarding; Jenkins is HTTP-ready, but its setup wizard and pipeline run remain human-owned. No remote CI or Azure/cloud operation was performed. Public ingress remains disabled pending production authentication and TLS ingress. Phase 2 remains partial.
+- Overall status: Phase 8 closure was approved on 2026-11-11. At the human's direction on 2026-11-12, Phase 9 is paused as PARTIAL, not complete: local checks and Bicep compilation passed, but branch CI and human Azure deployment evidence remain outstanding. Phase 10 was completed locally with a Docker Desktop Kubernetes cluster, a local Jenkins controller, and a successful Jenkins pipeline run. Public ingress remains disabled pending production authentication and TLS ingress. Phase 2 remains partial.
 
 ## Done
 
@@ -61,11 +61,9 @@
 - Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
 - Human-owned Figma prototype and task-based testing; review/adapt the React concept, create the Figma artifact, and provide genuine findings/results.
 - Phase 9 is paused as PARTIAL at the human's direction; the outstanding CI/cloud actions remain human-owned.
-- Phase 10 local Kubernetes and Jenkins artifacts are implemented and locally verified; human Jenkins setup, Pipeline job creation, and a green Jenkins run remain outstanding.
+- Phase 10 local Kubernetes and Jenkins artifacts are implemented and locally verified; the Jenkins controller and pipeline were corrected and completed successfully.
 ## Next
 
-- Human: complete the Jenkins setup wizard at `http://127.0.0.1:8081` without sharing the bootstrap password; create a trusted local Pipeline job for `Jenkinsfile` and run it.
-- Recheck and report the Jenkins pipeline result; only then assess Phase 10 exit criteria and closure.
 - Human may later resume Phase 9: obtain authorized PR CI, review Azure account/cost/database requirements, publish immutable image digests, deploy ACI, verify health, and review rollback/cleanup.
 - No remote push, Azure login, cloud resource changes, or deployment is authorized by this phase transition.
 
