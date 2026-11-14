@@ -10,6 +10,9 @@ The Azure deployment preparation remains partial: Bicep templates compile and a 
 
 The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together. Phase 9 preparation and its limits are recorded in [`docs/reports/phase9-report.md`](./docs/reports/phase9-report.md) and the human-operated [`docs/runbooks/phase9-acr-aci.md`](./docs/runbooks/phase9-acr-aci.md).
 
+For clone-to-run setup, tests, and a walkthrough of the application's
+operations, see the [clone and operations guide](./docs/runbooks/clone-and-operations.md).
+
 ## Requirements
 
 - Node.js 24.14.1 or a compatible version supported by Vite.

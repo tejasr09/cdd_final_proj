@@ -56,6 +56,7 @@
 - On 2026-11-12, Jenkins setup was completed locally, the trusted `phase10-quality` job was configured from `Jenkinsfile`, and a successful pipeline run was observed. The controller container was later removed at the human's request; its named home volume was preserved. No credential values were inspected or disclosed.
 - Phase 10 quality checks passed locally: 12 frontend tests, 88 backend tests, frontend lint/format/type-check/build, backend Ruff checks, migrations, `npm audit` (0 findings), and `uv audit --locked` (no known vulnerabilities). The Jenkins pipeline completed successfully.
 - Phase 11 local verification and reporting are complete. [`docs/reports/phase11-report.md`](reports/phase11-report.md) records the partial exit; [`docs/evidence-index.md`](evidence-index.md), [`docs/runbooks/phase11-demo.md`](runbooks/phase11-demo.md), and [`docs/limitations.md`](limitations.md) provide traceability, walkthrough, and known gaps.
+- Added [`docs/runbooks/clone-and-operations.md`](runbooks/clone-and-operations.md) with fresh-clone instructions, local Compose and native setups, test guidance, UI/API operations, and troubleshooting.
 
 ## In progress
 
