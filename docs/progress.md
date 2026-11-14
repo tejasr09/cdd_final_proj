@@ -1,11 +1,11 @@
 # Ripple Effect — Project Progress
 
-- Last updated: 2026-11-12
-- Current phase: Phase 10 — local Jenkins/Kubernetes implementation complete
-- Current branch: `feature/phase10-advanced-devops`
-- Phase 10 implementation commit: `874ef74`
-- Base commit: `b469fd4` (Phase 9 preparation)
-- Overall status: Phase 8 closure was approved on 2026-11-11. At the human's direction on 2026-11-12, Phase 9 is paused as PARTIAL, not complete: local checks and Bicep compilation passed, but branch CI and human Azure deployment evidence remain outstanding. Phase 10 was completed locally with a Docker Desktop Kubernetes cluster, a local Jenkins controller, and a successful Jenkins pipeline run. Public ingress remains disabled pending production authentication and TLS ingress. Phase 2 remains partial.
+- Last updated: 2026-11-14
+- Current phase: Phase 11 — local review/report complete; exit PARTIAL pending human evidence and approval
+- Current branch: `feature/phase11-release-hardening`
+- Phase 10 implementation commit: `874ef74`; prior branch tip: `95b3f22`
+- Phase 11 branch base: `95b3f22` (`feature/phase10-advanced-devops`)
+- Overall status: Local hardening, tests, Compose operation, backup/restore, and Phase 10 Jenkins/Kubernetes demo have been verified. Phase 11 exits PARTIAL: Phase 9 remote CI/ACR/ACI evidence and Phase 2 human research/Figma/usability evidence are outstanding. Production authentication and TLS ingress are not implemented; do not enable public ingress. No release candidate approval is claimed.
 
 ## Done
 
@@ -53,19 +53,19 @@
 - Phase 10 scope was selected by the human: Docker Desktop Kubernetes and a local Jenkins container, recorded in ADR-034. The Jenkins image uses the approved pinned official base and locked plugin versions; Compose binds only `127.0.0.1:8081` and provides no Docker socket or cloud credentials.
 - Added Phase 10 Kubernetes API/web manifests, a Jenkins quality-only pipeline, a local image-import helper, ADR-034, and a local-only runbook. No Ingress or public service is configured; Kubernetes uses ephemeral SQLite and local demo authentication.
 - On 2026-11-12, the image-import helper loaded both `:local` app images into the one-node Docker Desktop Kubernetes containerd store. Both Deployments became ready; web health and the proxied API readiness endpoint returned HTTP 200 through loopback port forwarding. The API upstream is `ripple-api:8000`; no Ingress exists.
-- On 2026-11-12, the local Jenkins container was built and started with its named home volume and loopback-only port. `/login` returned HTTP 200. Its initial setup wizard has not been completed, and no credentials or Jenkins logs were inspected.
-- Phase 10 quality checks passed locally: 12 frontend tests, 88 backend tests, frontend lint/format/type-check/build, backend Ruff checks, migrations, `npm audit` (0 findings), and `uv audit --locked` (no known vulnerabilities). The Jenkins pipeline itself has not yet been run.
+- On 2026-11-12, Jenkins setup was completed locally, the trusted `phase10-quality` job was configured from `Jenkinsfile`, and a successful pipeline run was observed. The controller container was later removed at the human's request; its named home volume was preserved. No credential values were inspected or disclosed.
+- Phase 10 quality checks passed locally: 12 frontend tests, 88 backend tests, frontend lint/format/type-check/build, backend Ruff checks, migrations, `npm audit` (0 findings), and `uv audit --locked` (no known vulnerabilities). The Jenkins pipeline completed successfully.
+- Phase 11 local verification and reporting are complete. [`docs/reports/phase11-report.md`](reports/phase11-report.md) records the partial exit; [`docs/evidence-index.md`](evidence-index.md), [`docs/runbooks/phase11-demo.md`](runbooks/phase11-demo.md), and [`docs/limitations.md`](limitations.md) provide traceability, walkthrough, and known gaps.
 
 ## In progress
 
 - Human-led Phase 2 research: recruit participants, obtain appropriate consent, conduct interviews, and record actual evidence.
 - Human-owned Figma prototype and task-based testing; review/adapt the React concept, create the Figma artifact, and provide genuine findings/results.
 - Phase 9 is paused as PARTIAL at the human's direction; the outstanding CI/cloud actions remain human-owned.
-- Phase 10 local Kubernetes and Jenkins artifacts are implemented and locally verified; the Jenkins controller and pipeline were corrected and completed successfully.
+- Phase 11 local work is complete; human UX evidence, remote/cloud evidence, and release approval remain outstanding.
 ## Next
 
-- Human may later resume Phase 9: obtain authorized PR CI, review Azure account/cost/database requirements, publish immutable image digests, deploy ACI, verify health, and review rollback/cleanup.
-- No remote push, Azure login, cloud resource changes, or deployment is authorized by this phase transition.
+- Human-owned Phase 2 research and Phase 9 remote/cloud evidence remain outstanding. No remote push, Azure login, cloud resource changes, or deployment is authorized by this phase transition.
 
 ## Ambiguity register
 
@@ -92,8 +92,8 @@
 | Done | Phase 8 delivery | Local Compose is reproducible, approved CI checks pass, evidence is genuine, and human closure approval was given 2026-11-11 |
 | Parallel human work | Complete Phase 2 research and Figma work | Human-owned clickable prototype covers event creation → analysis → impact inspection → scenario → comparison; genuine findings and design decisions documented; no fabricated evidence |
 | Closed partial | Phase 9 ACR/ACI | Bicep compiles and local container checks pass; branch CI and human cloud deployment/evidence remain incomplete |
-| In progress | Phase 10 Jenkins/Kubernetes | Local stack, manifests, and quality checks are verified; human Jenkins setup and pipeline execution remain |
-| Later | Phase 11 release hardening | Security, tests, accessibility, docs and evidence are reviewed; unmet criteria/limitations are explicit |
+| Done | Phase 10 Jenkins/Kubernetes | Local stack and manifests verified; Jenkins trusted quality pipeline completed successfully; later controller-container cleanup preserved its home volume |
+| Done locally; exit partial | Phase 11 release hardening | Local tests, scans, Compose, live analysis, backup/restore, performance, and documentation/evidence review completed; human release blockers remain |
 
 ## Blockers
 
@@ -108,7 +108,7 @@
 - Scenario behavior is verified with SQLite API tests; live PostgreSQL concurrent scenario updates remain unverified.
 - Bicep CLI 0.49.2 compiled both templates on 2026-11-12. Azure CLI remains unavailable; Azure account, subscription, region and budget remain unconfirmed, and no cloud operation has occurred.
 - GitHub CI on this branch remains unrun because push/PR requires explicit remote authorization.
-- Phase 10: Docker Desktop Kubernetes is Ready on the `docker-desktop` context, and the local API/web workloads are healthy. `kind` is not on PATH; `infra/phase10/load-local-images.ps1` imports the built images into the one-node cluster's `k8s.io` containerd namespace. Jenkins is running and HTTP-ready, but human setup, job creation, and an actual pipeline run are still required.
+- Phase 10: Docker Desktop Kubernetes workloads were verified Ready; the Jenkins trusted pipeline ran successfully. The Jenkins controller container was later removed; its home volume was retained. The currently running local app uses the `ripple-effect` Compose project.
 - The production authentication provider remains undecided. Public ACI ingress must remain disabled until production authentication and TLS ingress are implemented and reviewed.
 - The human selected an existing PostgreSQL service; its endpoint, TLS configuration, firewall/network path, and ACI reachability are not yet verified.
 - Bicep was selected by the human and recorded in ADR-033; resource design, costs, and cloud provisioning still require human review.
@@ -244,7 +244,7 @@
 | 2026-11-12 | `docker pull jenkins/jenkins:lts-jdk21` | PASS | Official image pulled after approval; digest `sha256:74401de6a6f92e1afe1b02d1c8e3d0c33f263bfb5275dd8813f9150355f2367b` |
 | 2026-11-12 | `docker compose --project-name ripple-phase10-jenkins -f infra\phase10\jenkins\compose.yml up --build --detach` | PASS | Jenkins image built; container started on `127.0.0.1:8081` with persistent home; no Docker socket or cloud credentials |
 | 2026-11-12 | `docker compose --project-name ripple-phase10-jenkins -f infra\phase10\jenkins\compose.yml config --quiet` | PASS | Jenkins Compose configuration parsed successfully |
-| 2026-11-12 | `Invoke-WebRequest http://127.0.0.1:8081/login` | PASS | Jenkins `/login` returned HTTP 200; setup wizard remains for the human; no password or logs were read |
+| 2026-11-12 | `Invoke-WebRequest http://127.0.0.1:8081/login` | PASS | Initial Jenkins `/login` probe returned HTTP 200; setup was completed later, without reading passwords or logs |
 | 2026-11-12 | `kubectl apply --dry-run=client -f infra\phase10\kubernetes.yaml` | PASS | Namespace, ConfigMap, Deployments, and ClusterIP Services validated |
 | 2026-11-12 | `.\infra\phase10\load-local-images.ps1` | PASS | Imported `ripple-effect-api:local` and `ripple-effect-web:local` into the one-node Docker Desktop Kubernetes runtime; temporary archive removed |
 | 2026-11-12 | `kubectl rollout status deployment/ripple-api -n ripple-effect --timeout=180s` and web equivalent | PASS | Both Kubernetes Deployments rolled out; one ready replica each |
@@ -252,7 +252,19 @@
 | 2026-11-12 | `kubectl exec -n ripple-effect deployment/ripple-web -- printenv API_UPSTREAM`; `kubectl get ingress -n ripple-effect` | PASS | Upstream is `ripple-api:8000`; no Ingress resources exist |
 | 2026-11-12 | Frontend `npm ci`, lint, format check, type-check, tests, audit, and build | PASS | 12 tests passed; npm audit reported 0 vulnerabilities; production build succeeded |
 | 2026-11-12 | Backend `python -m uv sync --locked`, Ruff check/format, pytest, Alembic upgrade/check, and `python -m uv audit --locked` | PASS | 88 tests passed; Ruff clean; no schema drift; no known vulnerabilities in 33 packages; temporary SQLite DB removed |
-| 2026-11-12 | Jenkins Pipeline job execution | NOT RUN | Human must finish the setup wizard, create a trusted local Pipeline job, and run the checked-in `Jenkinsfile` |
+| 2026-11-12 | Jenkins Pipeline job execution | PASS | Trusted local `phase10-quality` job completed successfully; no credentials were inspected or disclosed |
+| 2026-11-14 | Frontend lint, format, type-check, tests, production build | PASS | 12 tests passed; all frontend checks succeeded |
+| 2026-11-14 | Playwright primary workflow | PASS | 1 test passed using installed Chrome; the initial bundled-Chromium attempt failed because the browser binary was absent |
+| 2026-11-14 | Backend Ruff check/format, pytest, Alembic upgrade/check | PASS | 88 tests passed; Ruff clean; fresh SQLite migration and schema check passed |
+| 2026-11-14 | `npm audit --audit-level=low`; `python -m uv audit --locked` | PASS | 0 npm findings; uv found no known vulnerabilities or adverse project statuses in 33 packages |
+| 2026-11-14 | Trivy 0.74.0 scans of current API/web images | PASS / PARTIAL | 0 image vulnerabilities reported for each image. Trivy image report rendered `Secrets: -`; no clean image-secret count is claimed |
+| 2026-11-14 | Trivy 0.74.0 filesystem secret scan of selected app, infrastructure, docs, and workflow directories | PARTIAL | Scanner logged no issues; report summaries rendered `-` (not scanned), so this is not represented as a definitive zero-secret result |
+| 2026-11-14 | Docker Compose `ripple-effect` build/start and HTTP smoke | PASS | PostgreSQL, API and web healthy; readiness, web health and web-to-API smoke passed |
+| 2026-11-14 | Live PostgreSQL seeded analysis and cross-organization lookup | PASS | 8 results; Practical Session A 64.8; path provenance returned; audit rows increased 0 to 1; other organization received HTTP 404 |
+| 2026-11-14 | PostgreSQL backup and repeat `pg_restore --clean` into a disposable database | PASS | Mutated restored target was clean-restored; organizations/entities/events/audit row counts matched (2/20/2/1); disposable database and dump removed |
+| 2026-11-14 | Deterministic engine benchmark (3 runs per fixture) | PASS | 5,000-node chain median 0.875799 s; 120-node/7,140-edge DAG median 3.346820 s and explicit 10,000-path `completed_with_limits`; local measurements, no SLO |
+| 2026-11-14 | Docker Desktop Linux engine | PASS | Docker Engine 29.9.3 |
+| 2026-11-14 | `git diff --check` | PASS | No whitespace errors in current changes |
 
 ## Decisions and ADRs
 
@@ -272,7 +284,9 @@
 - `httpx==0.28.1` was added to the backend development dependency group for ASGI integration tests; it is not a runtime dependency.
 - PostgreSQL remains the authoritative store; SQLite is used for local development/tests. Phase 8 verified migration and seed startup against a local Compose PostgreSQL service, not a production deployment.
 - Phase 2 evidence and limitations: `docs/reports/phase2-report.md`.
-- Phase 10 local implementation, verification, limitations, and human setup actions: `docs/reports/phase10-report.md`.
+- Phase 10 local implementation, verified successful Jenkins run, cleanup, and limitations: `docs/reports/phase10-report.md`.
+- Phase 11 hardening results and unmet acceptance criteria: `docs/reports/phase11-report.md`.
+- Appendix G checklist: `docs/evidence-index.md`; walkthrough: `docs/runbooks/phase11-demo.md`; limitations: `docs/limitations.md`.
 - Phase 3 implementation evidence and limitations: `docs/reports/phase3-report.md`.
 - Phase 4 implementation evidence and limitations: `docs/reports/phase4-report.md`.
 - Phase 5 implementation evidence and limitations: `docs/reports/phase5-report.md`.
@@ -285,12 +299,12 @@
 |---|---|---|---|
 | API image OS advisories | CI could not pass the full-severity API image scan | Replaced the Debian base with the digest-pinned compatible Python 3.11 Alpine image; local and CI scans passed without suppression | Engineering, resolved |
 | Development dependency audit | npm/uv dependency advisories | `npm audit` and `uv audit --locked` pass in latest CI; retain checks | Engineering, verified |
-| Docker verification | Local Compose build/start acceptance | Docker Desktop 29.9.2; images, health, proxy, smoke and primary journey verified locally | Engineering, verified |
+| Docker verification | Local Compose build/start acceptance | Docker Desktop 29.9.3; current API/web/DB Compose stack healthy and smoke-tested | Engineering, verified 2026-11-14 |
 | Production auth provider undecided | Cannot configure production identity safely | Keep adapter boundary; select provider and deployment config with human approval | TODO(human), planned |
 | Azure subscription/cost/registry needs unknown | Deployment plan may be unusable or incur cost | Human confirms availability and budget; no cloud actions by agent | TODO(human), open |
 | UX evidence unavailable | Design could be mistaken for validated research | Keep personas as hypotheses and mark research TODO(human) | Team, open |
 | Dependency path explosion | Resource exhaustion or incomplete analysis | Deterministic node/path ceilings and visible incomplete status are implemented and tested; synchronous execution and concurrency still need production-scale review | Engineering, active |
-| Tenant leakage or scenario mutation | Cross-organization disclosure or live-data corruption | Scoped access and API isolation/live-record tests pass; live PostgreSQL verification remains open | Engineering, monitoring |
+| Tenant leakage or scenario mutation | Cross-organization disclosure or live-data corruption | Scoped access and API isolation/live-record tests pass; live PostgreSQL cross-organization lookup returned 404; concurrency stress remains open | Engineering, monitoring |
 
 ## Human actions pending
 
@@ -298,7 +312,7 @@
 - Create/own the clickable Figma prototype, conduct task-based tests, and provide actual frames/results for review.
 - Complete Phase 2 human research/Figma/usability deliverables when ready; Phase 2 remains partial.
 - Phase 8 closure approved 2026-11-11; Phase 9 preparation is authorized. All Azure resource creation, registry publishing, deployment, and cleanup remain human-operated.
-- Phase 10 is in progress on `feature/phase10-advanced-devops`; Kubernetes health and local Jenkins readiness passed on 2026-11-12. Human Jenkins setup and pipeline execution remain.
+- Phase 10's local demo path is closed; Jenkins setup and a successful trusted pipeline run were verified. Its controller container is removed and home volume retained.
 - Human must confirm account eligibility, region, cost/budget, publisher permissions, database TLS/network reachability, and production auth/TLS ingress plan.
 
 ## Evidence index
@@ -314,18 +328,19 @@
 - `docs/api/README.md` and `docs/api/openapi.json`
 - `docs/adr/`
 - `.github/workflows/ci.yml` (approved workflow; run 43055479057 passed quality, both scans, Compose smoke, and cleanup)
-- `docs/viva-notes.md` (implementation status and evidence updated through Phase 8 work)
+- `docs/viva-notes.md` (implementation status and evidence)
 - `docs/ux/` contains Phase 2 preparation documents and the historical synthetic React concept; no interview, human-owned Figma, or usability-test evidence exists.
 - Phase 1 code/test/API evidence is recorded in `docs/reports/phase1-report.md`; no CI, cloud, or benchmark evidence is claimed.
 
 ## Session handoff
 
-- Phase 9 was administratively paused as PARTIAL in local commit `b469fd4`; it is not complete. Phase 10 is in progress on `feature/phase10-advanced-devops`.
-- Exact next task: human completes Jenkins setup, creates a trusted local Pipeline job, and runs `Jenkinsfile`; do not read credentials or start Phase 11.
+- Phase 9 remains PARTIAL; human-owned Azure deployment and cost evidence remain outstanding. Phase 2 remains partial pending human UX evidence.
+- Phase 10's trusted Jenkins pipeline completed successfully. The local Jenkins controller container has since been removed; its named home volume remains.
+- Phase 11 local documentation and verification are complete. Remote CI and cloud actions remain unrun; no production identity or public ingress is claimed.
 - Files to read first: both root-level briefs, this file, `README.md`, and `docs/architecture/container-view.md`.
 - Phase 8 implementation verification run: [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) on `cbfb812`. Quality, dependency audits, API/web scans, Compose startup, smoke and cleanup passed.
 - Documentation follow-up run: [43056748402](https://github.com/tejasr09/cdd_final_proj/actions/runs/43056748402) on `f5bf230`; the refreshed report and progress documentation also passed CI.
-- The Phase 10 Kubernetes application is locally healthy and only accessible through port-forwarding; Jenkins is loopback-only. No remote push, pull request, image push, Azure resource operation, or cloud deployment was performed.
+- The Phase 10 Kubernetes application was locally healthy and only accessible through port-forwarding; Jenkins was loopback-only. No remote push, pull request, image push, Azure resource operation, or cloud deployment was performed.
 
 ## CI follow-up — 2026-11-11
 
@@ -364,4 +379,4 @@
 - Removed the named Phase 9 Compose test containers/network/database volume. Preserved the pre-existing untracked SQLite database.
 - Both Bicep templates compiled with CLI 0.49.2; Azure CLI is absent. No Azure operations, registry pushes, remote Git operations or GitHub CI run occurred.
 - At the human's direction, Phase 9 is paused/closed as **PARTIAL**, not complete; CI, ACR/ACI deployment, immutable digest verification, health evidence, and cost/cleanup review remain outstanding.
-- Phase 10 kickoff and runtime choices are approved. Jenkins/Kubernetes artifacts and local deployments are in place; Jenkins setup and pipeline execution remain human-owned. No Phase 10 completion is claimed.
+- At Phase 10 kickoff, Jenkins setup and pipeline execution were still human-owned. They were completed later on 2026-11-12; see the verified Phase 10 closure record above and in `docs/reports/phase10-report.md`.

@@ -1,6 +1,6 @@
 # Phase 10 Report — Advanced DevOps (local Jenkins and Kubernetes)
 
-Date: 2026-11-12
+Date: 2026-11-12 (updated 2026-11-14 to reconcile pipeline execution and cleanup)
 Branch: `feature/phase10-advanced-devops`
 Implementation commit: `874ef74`
 Base commit: `b469fd4` (Phase 9 preparation)
@@ -37,8 +37,12 @@ preserve the core application's authentication and tenant behavior.
 - Added [`ADR-034`](../adr/ADR-034-local-jenkins-kubernetes.md), the
   [Phase 10 runbook](../runbooks/phase10-jenkins-kubernetes.md), and updated
   [`progress.md`](../progress.md) and [`viva-notes.md`](../viva-notes.md).
-- Built and started the Jenkins container. It serves `/login` on loopback;
-  its setup wizard is intentionally left for the human.
+- Completed Jenkins setup locally without reading or disclosing credentials,
+  configured the trusted `phase10-quality` job from the checked-in
+  [`Jenkinsfile`](../../Jenkinsfile), and observed a successful pipeline run.
+- After verification, the Jenkins controller container was removed at the
+  human's request. Its named home volume was preserved. The local Kubernetes
+  manifests remain available as a separate local demo path.
 - Applied the Kubernetes manifests, imported both app images, and verified
   that API and web each reached Ready. Web health and the Nginx-proxied API
   readiness check both passed through a loopback port-forward.
@@ -50,9 +54,10 @@ preserve the core application's authentication and tenant behavior.
 - Kubernetes uses ClusterIP Services, no Ingress, one replica per workload,
   ephemeral SQLite, and local/test authentication. These are demo-only
   settings, not production guidance.
-- Jenkins runs trusted local code only. Its initial setup, credentials, and
-  job configuration remain human-owned. No Jenkins bootstrap password or
-  logs were inspected.
+- Jenkins ran trusted local code only. The setup was completed, the
+  `phase10-quality` job was configured from the checked-in pipeline, and a
+  successful run was observed. No Jenkins bootstrap password or logs were
+  inspected.
 - No remote push, pull request, GitHub CI run, Azure operation, registry
   publication, or cloud deployment was performed.
 
@@ -116,11 +121,10 @@ preserve the core application's authentication and tenant behavior.
 - Evidence produced: local manifest validation, image import, healthy
   Kubernetes rollouts, HTTP 200 health/readiness responses, Jenkins HTTP
   readiness, and local frontend/backend test and audit results.
-- Evidence still TODO(human): Jenkins wizard completion, trusted Pipeline job
-  configuration and a successful Jenkins run; human Phase 2 UX research; and
+- Evidence still TODO(human): Phase 2 UX research/Figma/usability evidence and
   the remaining Phase 9 CI/cloud evidence.
-- The Jenkins pipeline is not claimed to have run. No Azure deployment,
-  remote CI, cloud health, or Phase 10 security scan is claimed.
+- The Jenkins pipeline did run successfully. No Azure deployment, remote CI,
+  cloud health, or Jenkins-image Trivy scan is claimed.
 
 ## 8. Deviations and blockers
 
@@ -128,9 +132,10 @@ preserve the core application's authentication and tenant behavior.
   tags to its kind node. A narrowly scoped helper imports the two local tags
   into the node's containerd namespace. This remains a local Docker Desktop
   workflow and does not publish images.
-- Jenkins cannot be configured or run through its authenticated UI until the
-  human completes the setup wizard and creates a Pipeline job. Do not retrieve
-  or share its bootstrap password.
+- Jenkins setup and the trusted local pipeline run were completed. The
+  controller container has since been removed; the named home volume remains
+  available if the human chooses to restart it. No credential values were
+  inspected or included in this report.
 - Phase 9 remains paused as PARTIAL; its CI and human Azure tasks are separate
   and are not represented as completed by Phase 10.
 - No deviation from the approved local-only security boundaries.
@@ -139,26 +144,22 @@ preserve the core application's authentication and tenant behavior.
 
 [`docs/progress.md`](../progress.md) records the current branch/base, completed
 Phase 10 work, in-progress and next actions, blockers, decisions, and exact
-verification results. Phase 9 is still marked PARTIAL; Phase 10 is still in
-progress.
+verification results. Phase 9 is still marked PARTIAL; Phase 10's local demo
+path is closed; Phase 11 local work is complete with a PARTIAL exit assessment.
 
 ## 10. Human review required
 
-1. Complete Jenkins setup locally at `http://127.0.0.1:8081`; do not share the
-   bootstrap password.
-2. Create a Pipeline job using the trusted local repository's `Jenkinsfile`
-   and run it. Report the observed result so it can be recorded accurately.
-3. Review the runbook and decide when to stop the local Jenkins controller and
-   remove the local Kubernetes demo objects. The named Jenkins home volume
-   contains setup/build state and is not deleted automatically.
-4. Keep Phase 9 paused until its separate PR CI, ACR/ACI, database, cost,
-   rollback, and cleanup evidence is approved and supplied.
+1. Decide whether to retain or remove the persistent Jenkins home volume; the
+   controller container is already removed.
+2. Review whether to keep or remove the local Kubernetes demo objects.
+3. Keep the Azure deployment work paused until its separate CI, ACR/ACI,
+   database, cost, rollback, and cleanup evidence is approved and supplied.
 
 ## 11. Phase exit assessment
 
 - Exit criteria met: **PASS**.
-- Evidence-backed explanation: the local Kubernetes demo is reproducible and
-  healthy, the local Jenkins controller is HTTP-ready and operational, and the
+- Evidence-backed explanation: the local Kubernetes demo was reproducible and
+  healthy, the local Jenkins controller was HTTP-ready and operational, and the
   repository quality pipeline successfully ran after correcting the Jenkins
   `/tmp` disk-space issue that had taken the built-in node offline.
 - Recommended next step: keep the local stack running for validation or stop it
