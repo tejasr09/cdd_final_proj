@@ -4,7 +4,9 @@ Ripple Effect is a decision-support application for exploring how a modeled chan
 
 ## Current status
 
-Phases 1 and 3–7 are implemented, including the tenant-authorized API, deterministic analysis, scenario simulation, and the React/TypeScript workflow. Phase 8 is complete and its closure was approved on 2026-11-11: the pinned Python Alpine API image passes local full-severity Trivy scans; Compose migration, seed, health, proxy, smoke, and event-to-analysis checks pass. GitHub CI run [43055479057](https://github.com/tejasr09/cdd_final_proj/actions/runs/43055479057) passed all checks. Phase 9 preparation is in progress on `feature/phase9-acr-aci`: Bicep templates and a human-operated ACR/ACI runbook are drafted for an existing PostgreSQL service. The templates have not been compiled, and no image was pushed or cloud resource deployed. Public ingress remains disabled because production authentication and TLS ingress are not implemented. Phase 2 remains partial: interviews, a human-owned Figma artifact, and usability validation are still TODO(human).
+The API, deterministic analysis engine, scenario workflow, and React/TypeScript client are implemented. The local Compose stack was rebuilt and verified on 2026-11-14: PostgreSQL, API, and web became healthy; smoke checks passed; and the seeded analysis returned eight results with path provenance. Frontend and backend suites passed (12 and 88 tests), and the primary Playwright workflow passed using installed Chrome. See the [Phase 11 report](./docs/reports/phase11-report.md), [Appendix G evidence index](./docs/evidence-index.md), [demo script](./docs/runbooks/phase11-demo.md), and [limitations](./docs/limitations.md) for verification and remaining gaps.
+
+The Azure deployment preparation remains partial: Bicep templates compile and a human-operated ACR/ACI runbook exists, but no image publication, cloud deployment, or Azure health verification has been performed. Research interviews, a human-owned Figma artifact, and usability validation are also still TODO(human). Public ingress remains disabled until production authentication and TLS ingress are implemented and reviewed. Local authentication is development-only.
 
 The project brief is maintained in [`agent-brief.md`](./agent-brief.md) and [`agent-brief-continuation.md`](./agent-brief-continuation.md); read them together. Phase 9 preparation and its limits are recorded in [`docs/reports/phase9-report.md`](./docs/reports/phase9-report.md) and the human-operated [`docs/runbooks/phase9-acr-aci.md`](./docs/runbooks/phase9-acr-aci.md).
 
@@ -141,10 +143,10 @@ and is not copied into either image:
 ```powershell
 Copy-Item .env.example .env
 notepad .env
-docker compose config --quiet
-docker compose build
-docker compose up -d
-docker compose ps
+docker compose --project-name ripple-effect --env-file .env config --quiet
+docker compose --project-name ripple-effect --env-file .env build
+docker compose --project-name ripple-effect --env-file .env up -d
+docker compose --project-name ripple-effect --env-file .env ps
 python backend\scripts\smoke_compose.py
 ```
 
@@ -158,7 +160,7 @@ Compose network. `http://127.0.0.1:8000/docs` exposes the local API docs. To
 find the local demo user and organization IDs, inspect the seed output:
 
 ```powershell
-docker compose logs api
+docker compose --project-name ripple-effect --env-file .env logs api
 ```
 
 Enter the appropriate ID pair into the local connection form. Smoke-test
@@ -170,8 +172,39 @@ PASS web application
 PASS web-to-API proxy
 ```
 
-Stop the stack with `docker compose down`; the named local database volume is
-preserved.
+Stop the stack with
+`docker compose --project-name ripple-effect --env-file .env down`; the named
+local database volume is preserved.
+
+### Back up and restore local PostgreSQL data
+
+The Compose database volume is persistent, but it is not itself a backup.
+From the repository root with the stack running, create a custom-format dump
+and copy it out of the database container:
+
+```powershell
+docker compose --project-name ripple-effect --env-file .env exec -T db sh -c 'pg_dump --format=custom --no-owner --no-acl -U "$POSTGRES_USER" "$POSTGRES_DB" -f /tmp/ripple-effect.dump'
+docker compose --project-name ripple-effect --env-file .env cp db:/tmp/ripple-effect.dump .\ripple-effect-backup.dump
+docker compose --project-name ripple-effect --env-file .env exec -T db rm -f /tmp/ripple-effect.dump
+```
+
+Keep the dump in a safe local location; do not commit it. To restore, first
+confirm the file is the intended backup. Restore overwrites database objects
+in the local Compose database, so stop application writes and make a separate
+backup before proceeding:
+
+```powershell
+docker compose --project-name ripple-effect --env-file .env stop web api
+docker compose --project-name ripple-effect --env-file .env cp .\ripple-effect-backup.dump db:/tmp/ripple-effect-restore.dump
+docker compose --project-name ripple-effect --env-file .env exec -T db sh -c 'pg_restore --clean --if-exists --no-owner --no-acl --single-transaction --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" /tmp/ripple-effect-restore.dump'
+docker compose --project-name ripple-effect --env-file .env exec -T db rm -f /tmp/ripple-effect-restore.dump
+docker compose --project-name ripple-effect --env-file .env start api web
+```
+
+Check API readiness and the web-to-API smoke test after restoring. These
+instructions are for local development data only, not a production backup
+policy. Do not use `docker compose down --volumes` unless intentionally
+discarding the local database.
 
 Compose builds separate local-only image tags, `ripple-effect-api:local` and
 `ripple-effect-web:local`. For a release, use a version tag and a commit-SHA
